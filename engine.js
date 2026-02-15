@@ -243,3 +243,16 @@ Engine.intentStats7dFromEvents = function(events) {
   };
 };
 
+Engine.jarvisPressureFromEvents = function(events) {
+  const coachEvents = events.filter(e => e.mode === "coach");
+  const total = coachEvents.length;
+  if (total < 5) return 0;
+
+  const easy = coachEvents.filter(e => e.choice !== "primary").length;
+  const easyRate = easy / total;
+
+  if (easyRate >= 0.75) return 3;
+  if (easyRate >= 0.60) return 2;
+  if (easyRate >= 0.45) return 1;
+  return 0;
+};
