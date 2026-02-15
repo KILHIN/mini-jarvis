@@ -212,30 +212,39 @@ function setIntentAndStart(intent) {
   }
 
   // Event log unique (source de vérité)
-  const events = getEvents();
-  events.push({
-    ts: Date.now(),
-    date: Engine.todayKey(),
-    source: pendingSessionType || "instagram",
-    minutes: 10,
-    intent: intent,
-    mode: "allow"
-  });
-  setEvents(events);
+  const sid = newSessionId();
+const now = Date.now();
 
-  // Rafraîchir UI avant de quitter
-  renderHero();
-  drawChart();
-  renderPrediction();
-  renderProfile();
+const events = getEvents();
+events.push({
+  ts: now,
+  date: Engine.todayKey(),
+  source: pendingSessionType || "instagram",
+  minutes: 10,              // planifié (fallback)
+  minutesActual: null,      // réel à remplir à la fermeture
+  intent: intent,
+  mode: "allow",
+  sessionId: sid,
+  startedAt: now
+});
+setEvents(events);
+
+// mémorise le sid local (au cas où)
+Storage.set("lastSessionId", sid);
+
+// UI refresh
+renderHero(); 
+  drawChart(); 
+  renderPrediction(); 
+  renderProfile(); 
   renderIntentStats();
 
-  setTimeout(() => {
-    window.location.href =
-      "shortcuts://run-shortcut?name=" + encodeURIComponent("Mini Jarvis GO");
-  }, 250);
-}
-
+// Lance le raccourci en lui passant le sid
+setTimeout(() => {
+  window.location.href =
+    "shortcuts://run-shortcut?name=" + encodeURIComponent("Mini Jarvis GO") +
+    "&input=text&text=" + encodeURIComponent(sid);
+}, 250);
 
 function startPause() {
   showTimer();
@@ -475,6 +484,25 @@ window.triggerImport = triggerImport;
 
   // 2) src
   storeSourceFromURL();
+  
+(function applySpentFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  const sid = params.get("sid");
+  const spent = parseInt(params.get("spent"), 10);
+
+  if (!sid || !Number.isFinite(spent) || spent < 0 || spent > 240) return;
+
+  const events = getEvents();
+  const idx = events.findIndex(e => e.sessionId === sid);
+  if (idx === -1) return;
+
+  events[idx].minutesActual = spent;
+  events[idx].minutes = spent; // on remplace le planifié par le réel
+  setEvents(events);
+
+  // nettoie l’URL (évite double application si refresh)
+  history.replaceState({}, "", window.location.pathname + window.location.search.replace(/([?&])(sid|spent)=[^&]+(&)?/g, (m, p1, p2, p3) => p3 ? p1 : ""));
+})();
 
   // 3) loop
   const pings = recordOpenPing();
@@ -497,6 +525,10 @@ window.triggerImport = triggerImport;
 })();
 
 function getEvents() { return Storage.get("events", []); }
+
+function newSessionId() {
+  return Math.random().toString(36).slice(2) + "-" + Date.now().toString(36);
+}
 
 
 
