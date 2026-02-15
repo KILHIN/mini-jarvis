@@ -1,48 +1,194 @@
-body {
-    font-family: Arial, sans-serif;
-    background: #111;
-    color: white;
-    text-align: center;
-    margin: 0;
-    padding: 20px;
+:root{
+  --bg: #0b0d12;
+  --panel: rgba(255,255,255,0.06);
+  --panel-2: rgba(255,255,255,0.09);
+  --border: rgba(255,255,255,0.10);
+  --text: rgba(255,255,255,0.92);
+  --muted: rgba(255,255,255,0.70);
+  --muted2: rgba(255,255,255,0.55);
+
+  --blue: #1e90ff;
+  --blue2: #187bcd;
+
+  --green: #34c759;
+  --orange: #ff9500;
+  --red: #ff3b30;
+
+  --shadow: 0 10px 30px rgba(0,0,0,0.35);
+  --radius: 16px;
+  --radius2: 22px;
 }
 
-.container {
-    max-width: 400px;
-    margin: auto;
+*{ box-sizing: border-box; }
+
+html, body{
+  height: 100%;
 }
 
-button {
-    display: block;
-    width: 100%;
-    padding: 15px;
-    margin: 10px 0;
-    background: #1e90ff;
-    border: none;
-    color: white;
-    font-size: 16px;
-    border-radius: 8px;
+body{
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  background: radial-gradient(1200px 800px at 50% -10%, rgba(30,144,255,0.25), transparent 60%),
+              radial-gradient(900px 500px at 20% 110%, rgba(52,199,89,0.12), transparent 55%),
+              var(--bg);
+  color: var(--text);
+  padding: 18px 14px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-button:hover {
-    background: #187bcd;
+.container{
+  max-width: 420px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-.hidden {
-    display: none;
+/* Header */
+h1{
+  margin: 6px 4px 0;
+  font-size: 28px;
+  letter-spacing: -0.02em;
 }
-#coachSuggestion {
-    white-space: pre-line;
-    text-align: left;
+
+h2{
+  margin: 0 0 8px;
+  font-size: 16px;
+  color: var(--muted);
+  font-weight: 600;
 }
+
+/* Panels / Cards */
+.card{
+  background: linear-gradient(180deg, var(--panel), rgba(255,255,255,0.04));
+  border: 1px solid var(--border);
+  border-radius: var(--radius2);
+  padding: 14px 14px;
+  box-shadow: var(--shadow);
+}
+
+#context, #dailyBrief{
+  margin: 0;
+  line-height: 1.35;
+}
+
+#context{
+  color: var(--muted);
+  font-size: 14px;
+}
+
+#dailyBrief{
+  color: var(--text);
+  font-size: 14px;
+  margin-top: 8px;
+}
+
 #loopAlert{
-    background: #222;
-    border: 1px solid #444;
-    padding: 10px;
-    border-radius: 8px;
-    margin: 10px 0;
-    text-align: left;
-    white-space: pre-line;
+  margin-top: 10px;
+  background: rgba(255,59,48,0.10);
+  border: 1px solid rgba(255,59,48,0.25);
+  padding: 10px 12px;
+  border-radius: 14px;
+  white-space: pre-line;
+  color: rgba(255,255,255,0.90);
 }
 
-#intentBlock h2 { margin-top: 0; }
+/* Buttons */
+button{
+  appearance: none;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px 14px;
+  width: 100%;
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.20);
+  transition: transform 0.06s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+button:active{
+  transform: translateY(1px) scale(0.995);
+}
+
+/* Primary button (autoriser) */
+#btnAllow{
+  background: linear-gradient(180deg, rgba(30,144,255,0.95), rgba(24,123,205,0.95));
+  border-color: rgba(30,144,255,0.55);
+}
+#btnAllow:hover{
+  background: linear-gradient(180deg, rgba(30,144,255,1), rgba(24,123,205,1));
+}
+
+/* Secondary actions */
+#menu button:not(#btnAllow){
+  background: rgba(255,255,255,0.06);
+}
+
+/* Intent block */
+#intentBlock h2{
+  margin: 0 0 10px;
+}
+#intentBlock button{
+  text-align: left;
+}
+
+/* Timer */
+#timer{
+  text-align: center;
+}
+#timeDisplay{
+  font-size: 44px;
+  letter-spacing: -0.03em;
+  margin: 8px 0 2px;
+}
+#timerHint{
+  color: var(--muted2);
+  font-size: 13px;
+}
+
+/* Coach */
+#coachSuggestion{
+  white-space: pre-line;
+  text-align: left;
+  line-height: 1.45;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 12px 12px;
+  border-radius: var(--radius);
+  color: rgba(255,255,255,0.90);
+  font-size: 14px;
+}
+
+#coachActions{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin: 12px 0 6px;
+}
+
+/* Stats */
+#stats canvas{
+  width: 100%;
+  height: auto;
+  display: block;
+  margin-top: 8px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+}
+
+#prediction, #profile, #intentStats{
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+/* Hidden helper */
+.hidden{
+  display: none !important;
+}
