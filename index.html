@@ -1,70 +1,78 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini Jarvis</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mini Jarvis</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-    <div class="container">
-        <h1>Mini Jarvis</h1>
-        <p id="context"></p>
-        <p id="dailyBrief"></p>
-        <p id="loopAlert" class="hidden"></p>
+  <div class="container">
+    <h1>Mini Jarvis</h1>
 
+    <!-- Context / Daily brief / Loop alert -->
+    <div class="card">
+      <p id="context"></p>
+      <p id="dailyBrief"></p>
+      <p id="loopAlert" class="hidden"></p>
+    </div>
 
-       <div id="menu">
-  <button id="btnAllow" onclick="startSession('instagram')">Autoriser Instagram (10 min)</button>
-<button onclick="startPause()">Pause 2 minutes</button>
-<button onclick="launchCoach()">Coach personnel</button>
+    <!-- Menu -->
+    <div id="menu" class="card">
+      <h2>Contrôle</h2>
+      <button id="btnAllow" onclick="startSession('instagram')">Autoriser Instagram (10 min)</button>
+      <button onclick="startPause()">Pause 2 minutes</button>
+      <button onclick="launchCoach()">Coach personnel</button>
+    </div>
 
-</div>
+    <!-- Intent -->
+    <div id="intentBlock" class="card hidden">
+      <h2>Intention</h2>
+      <button onclick="setIntentAndStart('reply')">Répondre / contenu envoyé</button>
+      <button onclick="setIntentAndStart('fun')">Divertissement conscient</button>
+      <button onclick="setIntentAndStart('auto')">Automatique / ennui</button>
+      <button onclick="cancelIntent()">Annuler</button>
+    </div>
 
-<div id="intentBlock" class="hidden">
-  <h2>Intention</h2>
-  <button onclick="setIntentAndStart('reply')">Répondre / contenu envoyé</button>
-  <button onclick="setIntentAndStart('fun')">Divertissement conscient</button>
-  <button onclick="setIntentAndStart('auto')">Automatique / ennui</button>
-  <button onclick="cancelIntent()">Annuler</button>
-</div>
+    <!-- Timer panel (mainly for Pause; sessions use iOS timer) -->
+    <div id="timer" class="card hidden">
+      <h2>Minuteur</h2>
+      <div id="timeDisplay">10:00</div>
+      <p id="timerHint">Le minuteur iOS gère la session Instagram. Ici c’est surtout pour la pause.</p>
+    </div>
 
+    <!-- Coach -->
+    <div id="coach" class="card hidden">
+      <h2>Analyse Jarvis</h2>
+      <p id="coachSuggestion"></p>
 
-        <div id="timer" class="hidden">
-            <h2 id="timeDisplay">10:00</h2>
-        </div>
+      <div id="coachActions">
+        <button onclick="logChoice('primary')">Je fais la recommandation</button>
+        <button onclick="logChoice('alt1')">Je prends alternative 1</button>
+        <button onclick="logChoice('alt2')">Je prends alternative 2</button>
+      </div>
 
-       <div id="coach" class="hidden">
-            <h2>Analyse Jarvis :</h2>
-            <p id="coachSuggestion"></p>
-
-            <div id="coachActions">
-                <button onclick="logChoice('primary')">Je fais la recommandation</button>
-                <button onclick="logChoice('alt1')">Je prends alternative 1</button>
-                <button onclick="logChoice('alt2')">Je prends alternative 2</button>
-            </div>
-
-            <button onclick="goBack()">Retour</button>
-        </div>
-
-
-        <div id="stats">
-         <h2>Analyse des 7 derniers jours</h2>
-        <canvas id="chart" width="350" height="200"></canvas>
-        <button onclick="resetLoop()">Reset boucle (dev)</button>
-        <button onclick="exportData()">Exporter données (JSON)</button>
-        <p id="prediction"></p>
-        <p id="profile"></p>
-        <p id="intentStats"></p>
-        </div>
+      <button onclick="location.reload()">Retour</button>
 
     </div>
 
-<script src="storage.js"></script>
-<script src="engine.js"></script>
-<script src="app.js"></script>
+    <!-- Stats -->
+    <div id="stats" class="card">
+      <h2>Analyse des 7 derniers jours</h2>
+      <canvas id="chart" width="350" height="200"></canvas>
+
+      <button onclick="exportData()">Exporter données (JSON)</button>
+      <button onclick="resetLoop()">Reset boucle (dev)</button>
+
+      <p id="prediction"></p>
+      <p id="profile"></p>
+      <p id="intentStats"></p>
+    </div>
+  </div>
+
+  <script src="storage.js"></script>
+  <script src="engine.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
-
-
