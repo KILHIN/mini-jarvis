@@ -485,24 +485,44 @@ window.triggerImport = triggerImport;
   // 2) src
   storeSourceFromURL();
   
-(function applySpentFromURL() {
-  const params = new URLSearchParams(window.location.search);
-  const sid = params.get("sid");
-  const spent = parseInt(params.get("spent"), 10);
+function applySpentFromURL() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const sid = params.get("sid");
+    const spentRaw = params.get("spent");
 
-  if (!sid || !Number.isFinite(spent) || spent < 0 || spent > 240) return;
+    // rien à faire
+    if (!sid || spentRaw === null) return;
 
-  const events = getEvents();
-  const idx = events.findIndex(e => e.sessionId === sid);
-  if (idx === -1) return;
+    const spent = Number.parseInt(spentRaw, 10);
+    if (!Number.isFinite(spent) || spent < 0 || spent > 240) return;
 
-  events[idx].minutesActual = spent;
-  events[idx].minutes = spent; // on remplace le planifié par le réel
-  setEvents(events);
+    // getEvents/setEvents doivent exister
+    if (typeof getEvents !== "function" || typeof setEvents !== "function") return;
 
-  // nettoie l’URL (évite double application si refresh)
-  history.replaceState({}, "", window.location.pathname + window.location.search.replace(/([?&])(sid|spent)=[^&]+(&)?/g, (m, p1, p2, p3) => p3 ? p1 : ""));
-})();
+    const events = getEvents();
+    const idx = events.findIndex(e => e.sessionId === sid);
+    if (idx === -1) return;
+
+    // update event (réel)
+    events[idx] = {
+      ...events[idx],
+      minutesActual: spent,
+      minutes: spent
+    };
+    setEvents(events);
+
+    // nettoyer l’URL (évite double application)
+    params.delete("sid");
+    params.delete("spent");
+    const clean = params.toString();
+    const newUrl = window.location.pathname + (clean ? `?${clean}` : "");
+    window.history.replaceState({}, "", newUrl);
+  } catch (e) {
+    // ne jamais casser l'app pour ça
+    console.warn("applySpentFromURL error:", e);
+  }
+}
 
   // 3) loop
   const pings = recordOpenPing();
@@ -521,6 +541,7 @@ window.triggerImport = triggerImport;
   renderProfile();
   renderIntentStats();
   setupImportListener();
+  applySpentFromURL();
 
 })();
 
@@ -529,6 +550,7 @@ function getEvents() { return Storage.get("events", []); }
 function newSessionId() {
   return Math.random().toString(36).slice(2) + "-" + Date.now().toString(36);
 }
+
 
 
 
