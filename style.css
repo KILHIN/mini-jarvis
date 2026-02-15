@@ -35,9 +35,11 @@ body{
 /* TITRES */
 
 h1{
-  margin: 4px 0 8px;
-  font-size: 26px;
-  font-weight: 700;
+  margin: 8px 0 22px;
+  font-size: 28px;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: -0.02em;
 }
 
 h2{
@@ -56,6 +58,27 @@ h2{
   padding: 18px;
   box-shadow: var(--shadow);
 }
+
+.brand{
+  text-align: center;
+  margin: 10px 0 26px;
+}
+
+.brand h1{
+  margin: 0;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.tagline{
+  margin-top: 6px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 
 /* CONTEXT */
 
@@ -214,4 +237,5 @@ button:active{
   font-size: 14px;
   font-weight: 700;
 }
+
 
