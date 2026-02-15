@@ -11,12 +11,40 @@
   <div class="container">
     <h1>Mini Jarvis</h1>
 
-    <!-- Context / Daily brief / Loop alert -->
-    <div class="card">
-      <p id="context"></p>
-      <p id="dailyBrief"></p>
-      <p id="loopAlert" class="hidden"></p>
+   <!-- HERO / DASHBOARD -->
+<div class="card hero">
+  <div class="heroTop">
+    <div id="stateDot" class="stateDot"></div>
+
+    <div class="heroMain">
+      <div class="heroValue">
+        <span id="todayMinutes">0</span><span class="unit">min</span>
+      </div>
+      <div class="heroLabel">
+        <span id="stateLabel">État: VERT</span>
+        <span id="sourceLabel" class="muted"></span>
+      </div>
     </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi">
+      <div class="kpiTitle">Tendance</div>
+      <div id="kpiTrend" class="kpiValue">—</div>
+    </div>
+    <div class="kpi">
+      <div class="kpiTitle">Pression</div>
+      <div id="kpiPressure" class="kpiValue">0/3</div>
+    </div>
+    <div class="kpi">
+      <div class="kpiTitle">Auto (7j)</div>
+      <div id="kpiAuto" class="kpiValue">—</div>
+    </div>
+  </div>
+
+  <p id="loopAlert" class="hidden"></p>
+</div>
+
 
     <!-- Menu -->
     <div id="menu" class="card">
@@ -76,3 +104,4 @@
   <script src="app.js"></script>
 </body>
 </html>
+
