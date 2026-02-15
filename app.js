@@ -117,14 +117,14 @@ function saveSession(minutes) {
  * HERO / Dashboard render
  ***********************/
 function renderHero() {
-  const history = getHistory();
-  const intents = getIntents();
+  const events = getEvents();
   const behavior = getBehavior();
 
-  const totalToday = Engine.calcTodayTime(history);
-  const pred = Engine.trendPrediction(history, THRESH_ORANGE, THRESH_RED);
+  const totalToday = Engine.calcTodayTimeFromEvents(events);
+  const pred = Engine.trendPredictionFromEvents(events, THRESH_ORANGE, THRESH_RED);
+  const intents7 = Engine.intentStats7dFromEvents(events);
   const pressure = Engine.jarvisPressure(behavior);
-  const intents7 = Engine.intentStats7d(intents);
+
 
   // état
   let state = "VERT";
@@ -285,8 +285,8 @@ function drawChart() {
   const canvas = $("chart");
   const ctx = canvas.getContext("2d");
 
-  const history = getHistory();
-  const data = Engine.last7DaysData(history);
+  const events = getEvents();
+  const data = Engine.last7DaysDataFromEvents(events);
   const values = Object.values(data);
   const dates = Object.keys(data);
 
@@ -321,8 +321,8 @@ function drawChart() {
 
 function renderPrediction() {
   if (!has("prediction")) return;
-  const history = getHistory();
-  const pred = Engine.trendPrediction(history, THRESH_ORANGE, THRESH_RED);
+  const events = getEvents();
+const pred = Engine.trendPredictionFromEvents(events, THRESH_ORANGE, THRESH_RED);
   $("prediction").innerText =
     `Moyenne 7j : ${pred.avg} min/j. ${pred.trendText} Projection semaine : ${pred.weeklyProjection} min. Risque : ${pred.risk}.`;
 }
@@ -350,8 +350,8 @@ function renderProfile() {
 
 function renderIntentStats() {
   if (!has("intentStats")) return;
-  const intents = getIntents();
-  const s = Engine.intentStats7d(intents);
+ const events = getEvents();
+const s = Engine.intentStats7dFromEvents(events);
 
   if (s.total === 0) {
     $("intentStats").innerText = "Intentions (7j) : aucune donnée.";
@@ -506,5 +506,7 @@ window.triggerImport = triggerImport;
   setupImportListener();
 
 })();
+
+function getEvents() { return Storage.get("events", []); }
 
 
