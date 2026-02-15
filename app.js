@@ -187,14 +187,22 @@ function setIntentAndStart(intent) {
     return;
   }
 
-  // Enregistrer la session de 10 minutes immédiatement
+  // Log 10 min immédiatement
 saveSession(10);
 
- // Lancer le raccourci iOS (minuteur natif + ouverture Instagram)
-window.location.href =
-  "shortcuts://run-shortcut?name=" +
-  encodeURIComponent("Mini Jarvis GO");
-}
+// Mettre à jour l’UI avant de quitter la page
+updateContextAndBrief();
+drawChart();
+renderPrediction();
+renderProfile();
+renderIntentStats();
+
+// Laisser 300ms pour que l’UI se rafraîchisse, puis lancer iOS Shortcuts
+setTimeout(() => {
+  window.location.href =
+    "shortcuts://run-shortcut?name=" +
+    encodeURIComponent("Mini Jarvis GO");
+}, 300);
 
 function startPause() {
   showTimer();
@@ -407,6 +415,7 @@ if (src) {
   renderProfile();
   renderIntentStats();
 })();
+
 
 
 
