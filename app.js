@@ -3,45 +3,40 @@
  ***********************/
 const THRESH_ORANGE = 30;
 const THRESH_RED = 60;
-const IS_DEBUG = true; // mets false sur iPhone
+const IS_DEBUG = true; // mets false sur iPhone si tu veux réactiver les règles de boucle
 
 function $(id) { return document.getElementById(id); }
+function has(id) { return !!$(id); }
 
 /***********************
  * UI Helpers
  ***********************/
 function hideAllPanels() {
-  $("menu").classList.add("hidden");
-  $("intentBlock").classList.add("hidden");
-  $("timer").classList.add("hidden");
-  $("coach").classList.add("hidden");
+  if (has("menu")) $("menu").classList.add("hidden");
+  if (has("intentBlock")) $("intentBlock").classList.add("hidden");
+  if (has("timer")) $("timer").classList.add("hidden");
+  if (has("coach")) $("coach").classList.add("hidden");
 }
 
 function showMenu() {
   hideAllPanels();
-  $("menu").classList.remove("hidden");
+  if (has("menu")) $("menu").classList.remove("hidden");
 }
 
 function showIntent() {
   hideAllPanels();
-  $("intentBlock").classList.remove("hidden");
+  if (has("intentBlock")) $("intentBlock").classList.remove("hidden");
 }
 
 function showTimer() {
   hideAllPanels();
-  $("timer").classList.remove("hidden");
+  if (has("timer")) $("timer").classList.remove("hidden");
 }
 
-function showCoach() {
+function showCoachPanel() {
   hideAllPanels();
-  $("coach").classList.remove("hidden");
+  if (has("coach")) $("coach").classList.remove("hidden");
 }
-
-/***********************
- * State
- ***********************/
-let timerInterval = null;
-let pendingSessionType = null;
 
 /***********************
  * Data Access
@@ -62,9 +57,27 @@ function getOpenPings() { return Storage.get("openPings", []); }
 function setOpenPings(v) { Storage.set("openPings", v); }
 
 /***********************
+ * Source param (src=instagram)
+ ***********************/
+function storeSourceFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  const src = params.get("src");
+  if (src) Storage.set("lastSrc", { src, ts: Date.now() });
+}
+
+function getLastSourceLabel() {
+  const last = Storage.get("lastSrc", null);
+  return last?.src ? last.src : null;
+}
+
+/***********************
  * Core actions
  ***********************/
+let timerInterval = null;
+let pendingSessionType = null;
+
 function updateTimerDisplay(seconds) {
+  if (!has("timeDisplay")) return;
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   $("timeDisplay").innerText = `${m}:${s < 10 ? "0" : ""}${s}`;
@@ -77,52 +90,51 @@ function saveSession(minutes) {
 }
 
 function updateContextAndBrief() {
+  if (!has("context")) return;
+
   const history = getHistory();
   const intents = getIntents();
   const behavior = getBehavior();
 
   const totalToday = Engine.calcTodayTime(history);
+  const src = getLastSourceLabel();
 
-  // Contexte court
- const src = getLastSourceLabel();
-$("context").innerText = `Temps aujourd'hui : ${totalToday} min` + (src ? ` | Source: ${src}` : "");
+  $("context").innerText =
+    `Temps aujourd'hui : ${totalToday} min` + (src ? ` | Source: ${src}` : "");
 
-  const last = Storage.get("lastSrc", null);
-if (last?.src) {
-  $("context").innerText += ` | Source: ${last.src}`;
-}
+  if (has("dailyBrief")) {
+    const pred = Engine.trendPrediction(history, THRESH_ORANGE, THRESH_RED);
+    const pressure = Engine.jarvisPressure(behavior);
+    const it = Engine.intentStatsToday(intents);
 
+    let state = "VERT";
+    if (totalToday >= THRESH_RED) state = "ROUGE";
+    else if (totalToday >= THRESH_ORANGE) state = "ORANGE";
 
-  // Daily brief
-  const pred = Engine.trendPrediction(history, THRESH_ORANGE, THRESH_RED);
-  const pressure = Engine.jarvisPressure(behavior);
-  const it = Engine.intentStatsToday(intents);
+    let line = `Rapport du jour : ${totalToday} min. Etat ${state}. ${pred.trendText} Pression ${pressure}/3.`;
+    if (it.total > 0) line += ` Intentions: ${it.pConscious}% conscientes, ${it.pAuto}% auto.`;
+    else line += ` Intentions: aucune donnée.`;
 
-  let state = "VERT";
-  if (totalToday >= THRESH_RED) state = "ROUGE";
-  else if (totalToday >= THRESH_ORANGE) state = "ORANGE";
-
-  let line = `Rapport du jour : ${totalToday} min. Etat ${state}. ${pred.trendText} Pression ${pressure}/3.`;
-  if (it.total > 0) line += ` Intentions: ${it.pConscious}% conscientes, ${it.pAuto}% auto.`;
-  else line += ` Intentions: aucune donnée.`;
-  $("dailyBrief").innerText = line;
+    $("dailyBrief").innerText = line;
+  }
 }
 
 function launchCoach() {
   const history = getHistory();
   const behavior = getBehavior();
   const intents = getIntents();
-
   const intents7 = Engine.intentStats7d(intents);
 
-  $("coachSuggestion").innerText = Engine.coachSuggestion({
-    history,
-    behavior,
-    thresholds: { THRESH_ORANGE, THRESH_RED },
-    intents7
-  });
+  if (has("coachSuggestion")) {
+    $("coachSuggestion").innerText = Engine.coachSuggestion({
+      history,
+      behavior,
+      thresholds: { THRESH_ORANGE, THRESH_RED },
+      intents7
+    });
+  }
 
-  showCoach();
+  showCoachPanel();
 }
 
 /***********************
@@ -138,16 +150,16 @@ function recordOpenPing() {
 }
 
 function showLoopAlert(count15) {
-  const el = $("loopAlert");
-  if (!el) return;
-  el.classList.remove("hidden");
-  el.innerText =
+  if (!has("loopAlert")) return;
+  $("loopAlert").classList.remove("hidden");
+  $("loopAlert").innerText =
     `Boucle détectée.\n` +
     `Ouvertures sur 15 min : ${count15}.\n` +
     `Action imposée : coach contextuel.`;
 }
 
 function applyLoopRestriction() {
+  // Nouvelle UI: on masque le seul bouton "Autoriser"
   const btnAllow = $("btnAllow");
   if (btnAllow) btnAllow.classList.add("hidden");
 }
@@ -162,7 +174,7 @@ function resetLoop() {
  * Session flows
  ***********************/
 function startSession(type) {
-  pendingSessionType = type;
+  pendingSessionType = type; // ici "instagram"
   showIntent();
 }
 
@@ -172,6 +184,7 @@ function cancelIntent() {
 }
 
 function setIntentAndStart(intent) {
+  // log intention
   const intents = getIntents();
   intents.push({
     date: Engine.todayKey(),
@@ -181,34 +194,38 @@ function setIntentAndStart(intent) {
   });
   setIntents(intents);
 
+  // intention faible -> coach
   if (intent === "auto") {
     alert("Intention faible détectée. Coach recommandé.");
     launchCoach();
     return;
   }
 
-  // Log 10 min immédiatement
-saveSession(10);
+  // Data-driven: on comptabilise 10 min au moment de l'autorisation
+  saveSession(10);
 
-// Mettre à jour l’UI avant de quitter la page
-updateContextAndBrief();
-drawChart();
-renderPrediction();
-renderProfile();
-renderIntentStats();
+  // rafraîchir l’UI avant de quitter
+  updateContextAndBrief();
+  drawChart();
+  renderPrediction();
+  renderProfile();
+  renderIntentStats();
 
-// Laisser 300ms pour que l’UI se rafraîchisse, puis lancer iOS Shortcuts
-setTimeout(() => {
-  window.location.href =
-    "shortcuts://run-shortcut?name=" +
-    encodeURIComponent("Mini Jarvis GO");
-}, 300);
+  // lancer le raccourci iOS (minuteur natif + ouverture Instagram)
+  setTimeout(() => {
+    window.location.href =
+      "shortcuts://run-shortcut?name=" +
+      encodeURIComponent("Mini Jarvis GO");
+  }, 300);
+}
 
 function startPause() {
   showTimer();
 
   let timeLeft = 120;
   updateTimerDisplay(timeLeft);
+
+  if (timerInterval) clearInterval(timerInterval);
 
   timerInterval = setInterval(() => {
     timeLeft--;
@@ -226,8 +243,8 @@ function startPause() {
  * Stats rendering
  ***********************/
 function drawChart() {
+  if (!has("chart")) return;
   const canvas = $("chart");
-  if (!canvas) return;
   const ctx = canvas.getContext("2d");
 
   const history = getHistory();
@@ -266,27 +283,24 @@ function drawChart() {
 }
 
 function renderPrediction() {
-  const p = $("prediction");
-  if (!p) return;
-
+  if (!has("prediction")) return;
   const history = getHistory();
   const pred = Engine.trendPrediction(history, THRESH_ORANGE, THRESH_RED);
 
-  p.innerText =
+  $("prediction").innerText =
     `Moyenne 7j : ${pred.avg} min/j. ${pred.trendText} ` +
     `Projection semaine : ${pred.weeklyProjection} min. Risque : ${pred.risk}.`;
 }
 
 function renderProfile() {
-  const el = $("profile");
-  if (!el) return;
+  if (!has("profile")) return;
 
   const behavior = getBehavior();
   const total = (behavior.useful || 0) + (behavior.easy || 0);
   const pressure = Engine.jarvisPressure(behavior);
 
   if (total === 0) {
-    el.innerText = "Profil: aucune donnée comportementale (choisis des actions dans le coach).";
+    $("profile").innerText = "Profil: aucune donnée comportementale (choisis des actions dans le coach).";
     return;
   }
 
@@ -297,24 +311,23 @@ function renderProfile() {
   if (pressure === 2) interpretation = "Interprétation: biais de confort détecté. Correction appliquée.";
   if (pressure === 3) interpretation = "Interprétation: évitement systématique. Intervention nécessaire.";
 
-  el.innerText =
+  $("profile").innerText =
     `Profil: Useful ${behavior.useful || 0} | Easy ${behavior.easy || 0} (Easy ${easyRate}%). ` +
     `Pression: ${pressure}/3. ${interpretation}`;
 }
 
 function renderIntentStats() {
-  const el = $("intentStats");
-  if (!el) return;
+  if (!has("intentStats")) return;
 
   const intents = getIntents();
   const s = Engine.intentStats7d(intents);
 
   if (s.total === 0) {
-    el.innerText = "Intentions (7j) : aucune donnée.";
+    $("intentStats").innerText = "Intentions (7j) : aucune donnée.";
     return;
   }
 
-  el.innerText =
+  $("intentStats").innerText =
     `Intentions (7j) : Reply ${s.pReply}% | Fun ${s.pFun}% | Auto ${s.pAuto}% (n=${s.total}).`;
 }
 
@@ -329,7 +342,8 @@ function exportData() {
     intents: getIntents(),
     behavior: getBehavior(),
     choiceStats: getChoiceStats(),
-    openPings: getOpenPings()
+    openPings: getOpenPings(),
+    lastSrc: Storage.get("lastSrc", null)
   };
 
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -375,29 +389,14 @@ window.exportData = exportData;
 window.setIntentAndStart = setIntentAndStart;
 window.cancelIntent = cancelIntent;
 
-function storeSourceFromURL() {
-  const params = new URLSearchParams(window.location.search);
-  const src = params.get("src");
-  if (src) Storage.set("lastSrc", { src, ts: Date.now() });
-}
-
-function getLastSourceLabel() {
-  const last = Storage.get("lastSrc", null);
-  return last?.src ? last.src : null;
-}
-
 /***********************
  * Init
  ***********************/
 (function init() {
-  // Menu visible par défaut
   showMenu();
+
   storeSourceFromURL();
-  const params = new URLSearchParams(window.location.search);
-const src = params.get("src");
-if (src) {
-  Storage.set("lastSrc", { src, ts: Date.now() });
-}
+
   // ping + boucle (désactivée en debug)
   const pings = recordOpenPing();
   const loop = Engine.loopStatus(pings);
@@ -415,8 +414,3 @@ if (src) {
   renderProfile();
   renderIntentStats();
 })();
-
-
-
-
-
