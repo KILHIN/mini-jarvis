@@ -187,6 +187,9 @@ function setIntentAndStart(intent) {
     return;
   }
 
+  // Enregistrer la session de 10 minutes immédiatement
+saveSession(10);
+
  // Lancer le raccourci iOS (minuteur natif + ouverture Instagram)
 window.location.href =
   "shortcuts://run-shortcut?name=" +
@@ -404,6 +407,7 @@ if (src) {
   renderProfile();
   renderIntentStats();
 })();
+
 
 
 
