@@ -177,3 +177,69 @@ const Engine = {
     return `${header}\n${friction}\n\nRecommandation:\n• ${pick.title}\nProchain pas: ${pick.steps}\n\nAlternatives:\n• ${alt1.title}\n• ${alt2.title}`;
   }
 };
+
+Engine.calcTodayTimeFromEvents = function(events) {
+  const t = this.todayKey();
+  return events
+    .filter(e => e.date === t)
+    .reduce((s, e) => s + (e.minutes || 0), 0);
+};
+
+Engine.last7DaysDataFromEvents = function(events) {
+  const data = {};
+  const now = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(now.getDate() - i);
+    data[d.toDateString()] = 0;
+  }
+  events.forEach(e => {
+    if (Object.prototype.hasOwnProperty.call(data, e.date)) {
+      data[e.date] += (e.minutes || 0);
+    }
+  });
+  return data;
+};
+
+Engine.trendPredictionFromEvents = function(events, THRESH_ORANGE, THRESH_RED) {
+  const values = Object.values(this.last7DaysDataFromEvents(events));
+  const sum = values.reduce((a,b) => a + b, 0);
+  const avg = sum / values.length;
+
+  const prev3 = (values[0] + values[1] + values[2]) / 3;
+  const last3 = (values[4] + values[5] + values[6]) / 3;
+  const delta = last3 - prev3;
+
+  let trendText = "Tendance: stable.";
+  if (delta > 5) trendText = "Tendance: augmentation.";
+  else if (delta < -5) trendText = "Tendance: baisse.";
+
+  const weeklyProjection = Math.round(avg * 7);
+
+  let risk = "faible";
+  if (avg >= THRESH_RED) risk = "élevé";
+  else if (avg >= THRESH_ORANGE) risk = "modéré";
+
+  return { avg: Math.round(avg), weeklyProjection, trendText, risk };
+};
+
+Engine.intentStats7dFromEvents = function(events) {
+  const now = Date.now();
+  const windowMs = 7 * 24 * 60 * 60 * 1000;
+  const recent = events.filter(e => (e.ts || 0) && (now - e.ts <= windowMs));
+
+  const counts = { reply: 0, fun: 0, auto: 0, total: 0 };
+  recent.forEach(e => {
+    if (counts[e.intent] !== undefined) counts[e.intent]++;
+    counts.total++;
+  });
+
+  const pct = (n) => counts.total === 0 ? 0 : Math.round((n / counts.total) * 100);
+  return {
+    total: counts.total,
+    pReply: pct(counts.reply),
+    pFun: pct(counts.fun),
+    pAuto: pct(counts.auto)
+  };
+};
+
