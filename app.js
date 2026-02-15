@@ -25,12 +25,6 @@ function showCoachPanel() { hideAllPanels(); if (has("coach")) $("coach").classL
 /***********************
  * Data Access (Storage)
  ***********************/
-function getHistory() { return Storage.get("history", []); }
-function setHistory(v) { Storage.set("history", v); }
-
-function getIntents() { return Storage.get("intents", []); }
-function setIntents(v) { Storage.set("intents", v); }
-
 function getBehavior() { return Storage.get("behavior", { useful: 0, easy: 0 }); }
 function setBehavior(v) { Storage.set("behavior", v); }
 
@@ -107,23 +101,17 @@ function updateTimerDisplay(seconds) {
   $("timeDisplay").innerText = `${m}:${s < 10 ? "0" : ""}${s}`;
 }
 
-function saveSession(minutes) {
-  const history = getHistory();
-  history.push({ date: Engine.todayKey(), duration: minutes });
-  setHistory(history);
-}
-
 /***********************
  * HERO / Dashboard render
  ***********************/
 function renderHero() {
   const events = getEvents();
-  const behavior = getBehavior();
-
+  
   const totalToday = Engine.calcTodayTimeFromEvents(events);
   const pred = Engine.trendPredictionFromEvents(events, THRESH_ORANGE, THRESH_RED);
   const intents7 = Engine.intentStats7dFromEvents(events);
-  const pressure = Engine.jarvisPressure(behavior);
+  const pressure = Engine.jarvisPressureFromEvents(events);
+
 
 
   // état
@@ -438,10 +426,21 @@ function setupImportListener() {
  * Choice logging
  ***********************/
 function logChoice(type) {
-  const choiceStats = getChoiceStats();
-  choiceStats[type] = (choiceStats[type] || 0) + 1;
-  setChoiceStats(choiceStats);
+  const events = getEvents();
 
+  events.push({
+    ts: Date.now(),
+    date: Engine.todayKey(),
+    source: "coach",
+    minutes: 0,
+    intent: null,
+    mode: "coach",
+    choice: type // primary / alt1 / alt2
+  });
+
+  setEvents(events);
+
+  // Optionnel: garder behavior pour pression (transition)
   const behavior = getBehavior();
   if (type === "primary") behavior.useful = (behavior.useful || 0) + 1;
   else behavior.easy = (behavior.easy || 0) + 1;
@@ -450,6 +449,7 @@ function logChoice(type) {
   alert("Choix enregistré.");
   location.reload();
 }
+
 
 /***********************
  * Wire globals for HTML onclick
@@ -497,6 +497,7 @@ window.triggerImport = triggerImport;
 })();
 
 function getEvents() { return Storage.get("events", []); }
+
 
 
 
