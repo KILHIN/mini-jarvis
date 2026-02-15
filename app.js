@@ -187,22 +187,10 @@ function setIntentAndStart(intent) {
     return;
   }
 
-  showTimer();
-
-  let timeLeft = 600;
-  updateTimerDisplay(timeLeft);
-
-  timerInterval = setInterval(() => {
-    timeLeft--;
-    updateTimerDisplay(timeLeft);
-
-    if (timeLeft <= 0) {
-      clearInterval(timerInterval);
-      saveSession(10);
-      alert("Session terminée.");
-      location.reload();
-    }
-  }, 1000);
+ // Lancer le raccourci iOS (minuteur natif + ouverture Instagram)
+window.location.href =
+  "shortcuts://run-shortcut?name=" +
+  encodeURIComponent("Mini Jarvis GO");
 }
 
 function startPause() {
@@ -416,5 +404,6 @@ if (src) {
   renderProfile();
   renderIntentStats();
 })();
+
 
 
