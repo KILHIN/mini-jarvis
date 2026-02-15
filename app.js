@@ -148,10 +148,8 @@ function showLoopAlert(count15) {
 }
 
 function applyLoopRestriction() {
-  const btnReels = $("btnReels");
-  const btnOpen = $("btnOpen");
-  if (btnReels) btnReels.classList.add("hidden");
-  if (btnOpen) btnOpen.classList.add("hidden");
+  const btnAllow = $("btnAllow");
+  if (btnAllow) btnAllow.classList.add("hidden");
 }
 
 function resetLoop() {
@@ -418,4 +416,5 @@ if (src) {
   renderProfile();
   renderIntentStats();
 })();
+
 
