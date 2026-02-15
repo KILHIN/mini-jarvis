@@ -90,34 +90,51 @@ function saveSession(minutes) {
 }
 
 function updateContextAndBrief() {
-  if (!has("context")) return;
-
   const history = getHistory();
   const intents = getIntents();
   const behavior = getBehavior();
 
   const totalToday = Engine.calcTodayTime(history);
-  const src = getLastSourceLabel();
+  const pred = Engine.trendPrediction(history, THRESH_ORANGE, THRESH_RED);
+  const pressure = Engine.jarvisPressure(behavior);
+  const intents7 = Engine.intentStats7d(intents);
 
-  $("context").innerText =
-    `Temps aujourd'hui : ${totalToday} min` + (src ? ` | Source: ${src}` : "");
+  // Etat couleur
+  let state = "VERT";
+  let color = "#34c759";
+  if (totalToday >= THRESH_RED) { state = "ROUGE"; color = "#ff3b30"; }
+  else if (totalToday >= THRESH_ORANGE) { state = "ORANGE"; color = "#ff9500"; }
 
-  if (has("dailyBrief")) {
-    const pred = Engine.trendPrediction(history, THRESH_ORANGE, THRESH_RED);
-    const pressure = Engine.jarvisPressure(behavior);
-    const it = Engine.intentStatsToday(intents);
+  // Gros chiffre
+  if (has("todayMinutes")) $("todayMinutes").innerText = String(totalToday);
 
-    let state = "VERT";
-    if (totalToday >= THRESH_RED) state = "ROUGE";
-    else if (totalToday >= THRESH_ORANGE) state = "ORANGE";
+  // Label état
+  if (has("stateLabel")) $("stateLabel").innerText = `État: ${state}`;
 
-    let line = `Rapport du jour : ${totalToday} min. Etat ${state}. ${pred.trendText} Pression ${pressure}/3.`;
-    if (it.total > 0) line += ` Intentions: ${it.pConscious}% conscientes, ${it.pAuto}% auto.`;
-    else line += ` Intentions: aucune donnée.`;
-
-    $("dailyBrief").innerText = line;
+  // Dot couleur
+  if (has("stateDot")) {
+    $("stateDot").style.background = `linear-gradient(180deg, ${color}, rgba(255,255,255,0.08))`;
+    $("stateDot").style.borderColor = `${color}55`;
   }
-}
+
+  // Source
+  const src = getLastSourceLabel();
+  if (has("sourceLabel")) $("sourceLabel").innerText = src ? `Source: ${src}` : "";
+
+  // KPI Trend (simple)
+  if (has("kpiTrend")) {
+    const t = pred.trendText.includes("augmentation") ? "↑" :
+              pred.trendText.includes("baisse") ? "↓" : "→";
+    $("kpiTrend").innerText = t;
+  }
+
+  // KPI Pressure
+  if (has("kpiPressure")) $("kpiPressure").innerText = `${pressure}/3`;
+
+  // KPI Auto 7j
+  if (has("kpiAuto")) {
+    $("kpiAuto").innerText = intents7.total ? `${intents7.pAuto}%` : "—";
+  }
 
 function launchCoach() {
   const history = getHistory();
@@ -414,3 +431,4 @@ window.cancelIntent = cancelIntent;
   renderProfile();
   renderIntentStats();
 })();
+
