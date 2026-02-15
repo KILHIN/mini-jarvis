@@ -84,7 +84,8 @@ function updateContextAndBrief() {
   const totalToday = Engine.calcTodayTime(history);
 
   // Contexte court
-  $("context").innerText = `Temps aujourd'hui : ${totalToday} min`;
+ const src = getLastSourceLabel();
+$("context").innerText = `Temps aujourd'hui : ${totalToday} min` + (src ? ` | Source: ${src}` : "");
 
   const last = Storage.get("lastSrc", null);
 if (last?.src) {
@@ -377,13 +378,24 @@ window.exportData = exportData;
 window.setIntentAndStart = setIntentAndStart;
 window.cancelIntent = cancelIntent;
 
+function storeSourceFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  const src = params.get("src");
+  if (src) Storage.set("lastSrc", { src, ts: Date.now() });
+}
+
+function getLastSourceLabel() {
+  const last = Storage.get("lastSrc", null);
+  return last?.src ? last.src : null;
+}
+
 /***********************
  * Init
  ***********************/
 (function init() {
   // Menu visible par défaut
   showMenu();
-
+  storeSourceFromURL();
   const params = new URLSearchParams(window.location.search);
 const src = params.get("src");
 if (src) {
@@ -406,3 +418,4 @@ if (src) {
   renderProfile();
   renderIntentStats();
 })();
+
