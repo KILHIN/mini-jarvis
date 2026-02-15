@@ -3,43 +3,27 @@
  ***********************/
 const THRESH_ORANGE = 30;
 const THRESH_RED = 60;
-const IS_DEBUG = true; // mets false sur iPhone si tu veux réactiver les règles de boucle
+const IS_DEBUG = true; // mets false sur iPhone si tu veux la boucle
 
 function $(id) { return document.getElementById(id); }
-function has(id) { return !!$(id); }
+function has(id) { return !!document.getElementById(id); }
 
 /***********************
  * UI Helpers
  ***********************/
 function hideAllPanels() {
-  if (has("menu")) $("menu").classList.add("hidden");
-  if (has("intentBlock")) $("intentBlock").classList.add("hidden");
-  if (has("timer")) $("timer").classList.add("hidden");
-  if (has("coach")) $("coach").classList.add("hidden");
+  ["menu","intentBlock","timer","coach"].forEach(id => {
+    if (has(id)) $(id).classList.add("hidden");
+  });
 }
 
-function showMenu() {
-  hideAllPanels();
-  if (has("menu")) $("menu").classList.remove("hidden");
-}
-
-function showIntent() {
-  hideAllPanels();
-  if (has("intentBlock")) $("intentBlock").classList.remove("hidden");
-}
-
-function showTimer() {
-  hideAllPanels();
-  if (has("timer")) $("timer").classList.remove("hidden");
-}
-
-function showCoachPanel() {
-  hideAllPanels();
-  if (has("coach")) $("coach").classList.remove("hidden");
-}
+function showMenu() { hideAllPanels(); if (has("menu")) $("menu").classList.remove("hidden"); }
+function showIntent() { hideAllPanels(); if (has("intentBlock")) $("intentBlock").classList.remove("hidden"); }
+function showTimer() { hideAllPanels(); if (has("timer")) $("timer").classList.remove("hidden"); }
+function showCoachPanel() { hideAllPanels(); if (has("coach")) $("coach").classList.remove("hidden"); }
 
 /***********************
- * Data Access
+ * Data Access (Storage)
  ***********************/
 function getHistory() { return Storage.get("history", []); }
 function setHistory(v) { Storage.set("history", v); }
@@ -57,21 +41,20 @@ function getOpenPings() { return Storage.get("openPings", []); }
 function setOpenPings(v) { Storage.set("openPings", v); }
 
 /***********************
- * Source param (src=instagram)
+ * Source param
  ***********************/
 function storeSourceFromURL() {
   const params = new URLSearchParams(window.location.search);
   const src = params.get("src");
   if (src) Storage.set("lastSrc", { src, ts: Date.now() });
 }
-
 function getLastSourceLabel() {
   const last = Storage.get("lastSrc", null);
   return last?.src ? last.src : null;
 }
 
 /***********************
- * Core actions
+ * Timer / Session
  ***********************/
 let timerInterval = null;
 let pendingSessionType = null;
@@ -89,7 +72,10 @@ function saveSession(minutes) {
   setHistory(history);
 }
 
-function updateContextAndBrief() {
+/***********************
+ * HERO / Dashboard render
+ ***********************/
+function renderHero() {
   const history = getHistory();
   const intents = getIntents();
   const behavior = getBehavior();
@@ -99,43 +85,36 @@ function updateContextAndBrief() {
   const pressure = Engine.jarvisPressure(behavior);
   const intents7 = Engine.intentStats7d(intents);
 
-  // Etat couleur
+  // état
   let state = "VERT";
   let color = "#34c759";
   if (totalToday >= THRESH_RED) { state = "ROUGE"; color = "#ff3b30"; }
   else if (totalToday >= THRESH_ORANGE) { state = "ORANGE"; color = "#ff9500"; }
 
-  // Gros chiffre
   if (has("todayMinutes")) $("todayMinutes").innerText = String(totalToday);
-
-  // Label état
   if (has("stateLabel")) $("stateLabel").innerText = `État: ${state}`;
 
-  // Dot couleur
   if (has("stateDot")) {
     $("stateDot").style.background = `linear-gradient(180deg, ${color}, rgba(255,255,255,0.08))`;
     $("stateDot").style.borderColor = `${color}55`;
   }
 
-  // Source
   const src = getLastSourceLabel();
   if (has("sourceLabel")) $("sourceLabel").innerText = src ? `Source: ${src}` : "";
 
-  // KPI Trend (simple)
   if (has("kpiTrend")) {
-    const t = pred.trendText.includes("augmentation") ? "↑" :
-              pred.trendText.includes("baisse") ? "↓" : "→";
+    const t = pred.trendText.includes("augmentation") ? "↑"
+            : pred.trendText.includes("baisse") ? "↓"
+            : "→";
     $("kpiTrend").innerText = t;
   }
-
-  // KPI Pressure
   if (has("kpiPressure")) $("kpiPressure").innerText = `${pressure}/3`;
+  if (has("kpiAuto")) $("kpiAuto").innerText = intents7.total ? `${intents7.pAuto}%` : "—";
+}
 
-  // KPI Auto 7j
-  if (has("kpiAuto")) {
-    $("kpiAuto").innerText = intents7.total ? `${intents7.pAuto}%` : "—";
-  }
-
+/***********************
+ * Coach
+ ***********************/
 function launchCoach() {
   const history = getHistory();
   const behavior = getBehavior();
@@ -150,12 +129,11 @@ function launchCoach() {
       intents7
     });
   }
-
   showCoachPanel();
 }
 
 /***********************
- * Loop handling
+ * Loop
  ***********************/
 function recordOpenPing() {
   const pings = getOpenPings();
@@ -170,13 +148,10 @@ function showLoopAlert(count15) {
   if (!has("loopAlert")) return;
   $("loopAlert").classList.remove("hidden");
   $("loopAlert").innerText =
-    `Boucle détectée.\n` +
-    `Ouvertures sur 15 min : ${count15}.\n` +
-    `Action imposée : coach contextuel.`;
+    `Boucle détectée.\nOuvertures sur 15 min : ${count15}.\nAction imposée : coach contextuel.`;
 }
 
 function applyLoopRestriction() {
-  // Nouvelle UI: on masque le seul bouton "Autoriser"
   const btnAllow = $("btnAllow");
   if (btnAllow) btnAllow.classList.add("hidden");
 }
@@ -188,10 +163,10 @@ function resetLoop() {
 }
 
 /***********************
- * Session flows
+ * Flows
  ***********************/
 function startSession(type) {
-  pendingSessionType = type; // ici "instagram"
+  pendingSessionType = type;
   showIntent();
 }
 
@@ -201,7 +176,6 @@ function cancelIntent() {
 }
 
 function setIntentAndStart(intent) {
-  // log intention
   const intents = getIntents();
   intents.push({
     date: Engine.todayKey(),
@@ -211,43 +185,38 @@ function setIntentAndStart(intent) {
   });
   setIntents(intents);
 
-  // intention faible -> coach
   if (intent === "auto") {
     alert("Intention faible détectée. Coach recommandé.");
     launchCoach();
     return;
   }
 
-  // Data-driven: on comptabilise 10 min au moment de l'autorisation
+  // Compter 10 min dès l’autorisation
   saveSession(10);
 
-  // rafraîchir l’UI avant de quitter
-  updateContextAndBrief();
+  // Rafraîchir dashboard + stats avant de quitter
+  renderHero();
   drawChart();
   renderPrediction();
   renderProfile();
   renderIntentStats();
 
-  // lancer le raccourci iOS (minuteur natif + ouverture Instagram)
+  // Lancer le raccourci iOS
   setTimeout(() => {
     window.location.href =
-      "shortcuts://run-shortcut?name=" +
-      encodeURIComponent("Mini Jarvis GO");
-  }, 300);
+      "shortcuts://run-shortcut?name=" + encodeURIComponent("Mini Jarvis GO");
+  }, 250);
 }
 
 function startPause() {
   showTimer();
-
   let timeLeft = 120;
   updateTimerDisplay(timeLeft);
 
   if (timerInterval) clearInterval(timerInterval);
-
   timerInterval = setInterval(() => {
     timeLeft--;
     updateTimerDisplay(timeLeft);
-
     if (timeLeft <= 0) {
       clearInterval(timerInterval);
       alert("Pause terminée. Décision consciente requise.");
@@ -257,7 +226,7 @@ function startPause() {
 }
 
 /***********************
- * Stats rendering
+ * Stats
  ***********************/
 function drawChart() {
   if (!has("chart")) return;
@@ -266,7 +235,6 @@ function drawChart() {
 
   const history = getHistory();
   const data = Engine.last7DaysData(history);
-
   const values = Object.values(data);
   const dates = Object.keys(data);
 
@@ -303,15 +271,12 @@ function renderPrediction() {
   if (!has("prediction")) return;
   const history = getHistory();
   const pred = Engine.trendPrediction(history, THRESH_ORANGE, THRESH_RED);
-
   $("prediction").innerText =
-    `Moyenne 7j : ${pred.avg} min/j. ${pred.trendText} ` +
-    `Projection semaine : ${pred.weeklyProjection} min. Risque : ${pred.risk}.`;
+    `Moyenne 7j : ${pred.avg} min/j. ${pred.trendText} Projection semaine : ${pred.weeklyProjection} min. Risque : ${pred.risk}.`;
 }
 
 function renderProfile() {
   if (!has("profile")) return;
-
   const behavior = getBehavior();
   const total = (behavior.useful || 0) + (behavior.easy || 0);
   const pressure = Engine.jarvisPressure(behavior);
@@ -320,7 +285,6 @@ function renderProfile() {
     $("profile").innerText = "Profil: aucune donnée comportementale (choisis des actions dans le coach).";
     return;
   }
-
   const easyRate = Math.round(((behavior.easy || 0) / total) * 100);
 
   let interpretation = "Interprétation: discipline stable.";
@@ -329,13 +293,11 @@ function renderProfile() {
   if (pressure === 3) interpretation = "Interprétation: évitement systématique. Intervention nécessaire.";
 
   $("profile").innerText =
-    `Profil: Useful ${behavior.useful || 0} | Easy ${behavior.easy || 0} (Easy ${easyRate}%). ` +
-    `Pression: ${pressure}/3. ${interpretation}`;
+    `Profil: Useful ${behavior.useful || 0} | Easy ${behavior.easy || 0} (Easy ${easyRate}%). Pression: ${pressure}/3. ${interpretation}`;
 }
 
 function renderIntentStats() {
   if (!has("intentStats")) return;
-
   const intents = getIntents();
   const s = Engine.intentStats7d(intents);
 
@@ -343,7 +305,6 @@ function renderIntentStats() {
     $("intentStats").innerText = "Intentions (7j) : aucune donnée.";
     return;
   }
-
   $("intentStats").innerText =
     `Intentions (7j) : Reply ${s.pReply}% | Fun ${s.pFun}% | Auto ${s.pAuto}% (n=${s.total}).`;
 }
@@ -365,19 +326,17 @@ function exportData() {
 
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
-
   const a = document.createElement("a");
   a.href = url;
-  a.download = `mini-jarvis-export-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `intent-export-${new Date().toISOString().slice(0, 10)}.json`;
   document.body.appendChild(a);
   a.click();
   a.remove();
-
   URL.revokeObjectURL(url);
 }
 
 /***********************
- * Coach choice logging
+ * Choice logging
  ***********************/
 function logChoice(type) {
   const choiceStats = getChoiceStats();
@@ -402,7 +361,6 @@ window.launchCoach = launchCoach;
 window.logChoice = logChoice;
 window.resetLoop = resetLoop;
 window.exportData = exportData;
-
 window.setIntentAndStart = setIntentAndStart;
 window.cancelIntent = cancelIntent;
 
@@ -410,11 +368,13 @@ window.cancelIntent = cancelIntent;
  * Init
  ***********************/
 (function init() {
+  // 1) UI
   showMenu();
 
+  // 2) src
   storeSourceFromURL();
 
-  // ping + boucle (désactivée en debug)
+  // 3) loop
   const pings = recordOpenPing();
   const loop = Engine.loopStatus(pings);
 
@@ -422,13 +382,12 @@ window.cancelIntent = cancelIntent;
     showLoopAlert(loop.count15);
     applyLoopRestriction();
     launchCoach();
-  } else {
-    updateContextAndBrief();
   }
 
+  // 4) render
+  renderHero();
   drawChart();
   renderPrediction();
   renderProfile();
   renderIntentStats();
 })();
-
