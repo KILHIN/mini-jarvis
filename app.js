@@ -40,6 +40,47 @@ function setChoiceStats(v) { Storage.set("choiceStats", v); }
 function getOpenPings() { return Storage.get("openPings", []); }
 function setOpenPings(v) { Storage.set("openPings", v); }
 
+function getEvents() { return Storage.get("events", []); }
+function setEvents(v) { Storage.set("events", v); }
+
+function migrateToEventsIfNeeded() {
+  const existing = getEvents();
+  if (existing.length > 0) return; // déjà migré
+
+  const history = Storage.get("history", []);
+  const intents = Storage.get("intents", []);
+
+  // index intents par date (ordre chronologique)
+  const intentsByDate = {};
+  intents
+    .slice()
+    .sort((a,b) => (a.ts || 0) - (b.ts || 0))
+    .forEach(i => {
+      const d = i.date || Engine.todayKey();
+      if (!intentsByDate[d]) intentsByDate[d] = [];
+      intentsByDate[d].push(i);
+    });
+
+  // convertir history -> events en associant la prochaine intention disponible du même jour
+  const events = history.map((h) => {
+    const d = h.date || Engine.todayKey();
+    const bucket = intentsByDate[d] || [];
+    const linkedIntent = bucket.length ? bucket.shift() : null;
+
+    return {
+      ts: linkedIntent?.ts || Date.now(),
+      date: d,
+      source: linkedIntent?.sessionType || "unknown",
+      minutes: h.duration || 0,
+      intent: linkedIntent?.intent || "unknown",
+      mode: "allow"
+    };
+  });
+
+  setEvents(events);
+}
+
+
 /***********************
  * Source param
  ***********************/
@@ -190,6 +231,17 @@ function setIntentAndStart(intent) {
     launchCoach();
     return;
   }
+// Event log unique (source de vérité)
+const events = getEvents();
+events.push({
+  ts: Date.now(),
+  date: Engine.todayKey(),
+  source: pendingSessionType || "instagram",
+  minutes: 10,
+  intent: intent,
+  mode: "allow"
+});
+setEvents(events);
 
   // Compter 10 min dès l’autorisation
   saveSession(10);
@@ -321,7 +373,9 @@ function exportData() {
     behavior: getBehavior(),
     choiceStats: getChoiceStats(),
     openPings: getOpenPings(),
-    lastSrc: Storage.get("lastSrc", null)
+    lastSrc: Storage.get("lastSrc", null),
+    events: Storage.get("events", []),
+
   };
 
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -359,6 +413,7 @@ function applyImportReplace(p) {
   localStorage.setItem("behavior", JSON.stringify(p.behavior || { useful: 0, easy: 0 }));
   localStorage.setItem("choiceStats", JSON.stringify(p.choiceStats || { primary: 0, alt1: 0, alt2: 0 }));
   localStorage.setItem("openPings", JSON.stringify(p.openPings || []));
+  localStorage.setItem("events", JSON.stringify(p.events || []));
   if (p.lastSrc) localStorage.setItem("lastSrc", JSON.stringify(p.lastSrc));
 }
 
@@ -427,6 +482,7 @@ window.triggerImport = triggerImport;
 (function init() {
   // 1) UI
   showMenu();
+  migrateToEventsIfNeeded();
 
   // 2) src
   storeSourceFromURL();
@@ -450,4 +506,5 @@ window.triggerImport = triggerImport;
   setupImportListener();
 
 })();
+
 
