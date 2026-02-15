@@ -145,21 +145,20 @@ function renderHero() {
  * Coach
  ***********************/
 function launchCoach() {
-  const history = getHistory();
-  const behavior = getBehavior();
-  const intents = getIntents();
-  const intents7 = Engine.intentStats7d(intents);
+  const events = getEvents();
+  const intents7 = Engine.intentStats7dFromEvents(events);
 
   if (has("coachSuggestion")) {
     $("coachSuggestion").innerText = Engine.coachSuggestion({
-      history,
-      behavior,
+      events,
       thresholds: { THRESH_ORANGE, THRESH_RED },
       intents7
     });
   }
+
   showCoachPanel();
 }
+
 
 /***********************
  * Loop
@@ -246,6 +245,7 @@ setTimeout(() => {
     "&input=text&text=" + encodeURIComponent(sid);
 }, 250);
 
+}
 function startPause() {
   showTimer();
   let timeLeft = 120;
@@ -354,14 +354,11 @@ function exportData() {
   const payload = {
     exportedAt: new Date().toISOString(),
     config: { THRESH_ORANGE, THRESH_RED },
-    history: getHistory(),
-    intents: getIntents(),
     behavior: getBehavior(),
     choiceStats: getChoiceStats(),
     openPings: getOpenPings(),
     lastSrc: Storage.get("lastSrc", null),
-    events: Storage.get("events", []),
-
+    events: getEvents()
   };
 
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -374,6 +371,7 @@ function exportData() {
   a.remove();
   URL.revokeObjectURL(url);
 }
+
 function triggerImport() {
   const input = document.getElementById("importFile");
   if (!input) return alert("Import indisponible: input manquant.");
@@ -550,6 +548,7 @@ function getEvents() { return Storage.get("events", []); }
 function newSessionId() {
   return Math.random().toString(36).slice(2) + "-" + Date.now().toString(36);
 }
+
 
 
 
