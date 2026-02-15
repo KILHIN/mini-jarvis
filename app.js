@@ -86,6 +86,12 @@ function updateContextAndBrief() {
   // Contexte court
   $("context").innerText = `Temps aujourd'hui : ${totalToday} min`;
 
+  const last = Storage.get("lastSrc", null);
+if (last?.src) {
+  $("context").innerText += ` | Source: ${last.src}`;
+}
+
+
   // Daily brief
   const pred = Engine.trendPrediction(history, THRESH_ORANGE, THRESH_RED);
   const pressure = Engine.jarvisPressure(behavior);
@@ -378,6 +384,11 @@ window.cancelIntent = cancelIntent;
   // Menu visible par défaut
   showMenu();
 
+  const params = new URLSearchParams(window.location.search);
+const src = params.get("src");
+if (src) {
+  Storage.set("lastSrc", { src, ts: Date.now() });
+}
   // ping + boucle (désactivée en debug)
   const pings = recordOpenPing();
   const loop = Engine.loopStatus(pings);
