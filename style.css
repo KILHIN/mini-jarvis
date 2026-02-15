@@ -1,0 +1,48 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #111;
+    color: white;
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 400px;
+    margin: auto;
+}
+
+button {
+    display: block;
+    width: 100%;
+    padding: 15px;
+    margin: 10px 0;
+    background: #1e90ff;
+    border: none;
+    color: white;
+    font-size: 16px;
+    border-radius: 8px;
+}
+
+button:hover {
+    background: #187bcd;
+}
+
+.hidden {
+    display: none;
+}
+#coachSuggestion {
+    white-space: pre-line;
+    text-align: left;
+}
+#loopAlert{
+    background: #222;
+    border: 1px solid #444;
+    padding: 10px;
+    border-radius: 8px;
+    margin: 10px 0;
+    text-align: left;
+    white-space: pre-line;
+}
+
+#intentBlock h2 { margin-top: 0; }

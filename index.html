@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Jarvis</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <h1>Mini Jarvis</h1>
+        <p id="context"></p>
+        <p id="dailyBrief"></p>
+        <p id="loopAlert" class="hidden"></p>
+
+
+       <div id="menu">
+  <button id="btnReels" onclick="startSession('reels')">Voir les réels (10 min)</button>
+  <button id="btnOpen" onclick="startSession('open')">Ouvrir librement (10 min)</button>
+  <button onclick="startPause()">Pause 2 minutes</button>
+  <button onclick="launchCoach()">Coach personnel</button>
+</div>
+
+<div id="intentBlock" class="hidden">
+  <h2>Intention</h2>
+  <button onclick="setIntentAndStart('reply')">Répondre / contenu envoyé</button>
+  <button onclick="setIntentAndStart('fun')">Divertissement conscient</button>
+  <button onclick="setIntentAndStart('auto')">Automatique / ennui</button>
+  <button onclick="cancelIntent()">Annuler</button>
+</div>
+
+
+        <div id="timer" class="hidden">
+            <h2 id="timeDisplay">10:00</h2>
+        </div>
+
+       <div id="coach" class="hidden">
+            <h2>Analyse Jarvis :</h2>
+            <p id="coachSuggestion"></p>
+
+            <div id="coachActions">
+                <button onclick="logChoice('primary')">Je fais la recommandation</button>
+                <button onclick="logChoice('alt1')">Je prends alternative 1</button>
+                <button onclick="logChoice('alt2')">Je prends alternative 2</button>
+            </div>
+
+            <button onclick="goBack()">Retour</button>
+        </div>
+
+
+        <div id="stats">
+         <h2>Analyse des 7 derniers jours</h2>
+        <canvas id="chart" width="350" height="200"></canvas>
+        <button onclick="resetLoop()">Reset boucle (dev)</button>
+        <button onclick="exportData()">Exporter données (JSON)</button>
+        <p id="prediction"></p>
+        <p id="profile"></p>
+        <p id="intentStats"></p>
+        </div>
+
+    </div>
+
+<script src="storage.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
+
