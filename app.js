@@ -334,6 +334,61 @@ function exportData() {
   a.remove();
   URL.revokeObjectURL(url);
 }
+function triggerImport() {
+  const input = document.getElementById("importFile");
+  if (!input) return alert("Import indisponible: input manquant.");
+  input.value = ""; // permet de réimporter le même fichier
+  input.click();
+}
+
+function validatePayload(p) {
+  // Validation minimale et safe
+  if (!p || typeof p !== "object") return { ok: false, msg: "Fichier invalide." };
+  if (!p.config || typeof p.config !== "object") return { ok: false, msg: "config manquante." };
+  if (!Array.isArray(p.history)) return { ok: false, msg: "history manquant." };
+  if (!Array.isArray(p.intents)) return { ok: false, msg: "intents manquant." };
+  if (!p.behavior || typeof p.behavior !== "object") return { ok: false, msg: "behavior manquant." };
+  // optionnel: choiceStats/openPings
+  return { ok: true };
+}
+
+function applyImportReplace(p) {
+  // Remplacement total des données app
+  localStorage.setItem("history", JSON.stringify(p.history || []));
+  localStorage.setItem("intents", JSON.stringify(p.intents || []));
+  localStorage.setItem("behavior", JSON.stringify(p.behavior || { useful: 0, easy: 0 }));
+  localStorage.setItem("choiceStats", JSON.stringify(p.choiceStats || { primary: 0, alt1: 0, alt2: 0 }));
+  localStorage.setItem("openPings", JSON.stringify(p.openPings || []));
+  if (p.lastSrc) localStorage.setItem("lastSrc", JSON.stringify(p.lastSrc));
+}
+
+function setupImportListener() {
+  const input = document.getElementById("importFile");
+  if (!input) return;
+
+  input.addEventListener("change", async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const payload = JSON.parse(text);
+
+      const v = validatePayload(payload);
+      if (!v.ok) return alert("Import refusé : " + v.msg);
+
+      // Confirmation simple (safe)
+      const ok = confirm("Importer va remplacer toutes les données actuelles. Continuer ?");
+      if (!ok) return;
+
+      applyImportReplace(payload);
+      alert("Import terminé. Rechargement…");
+      location.reload();
+    } catch (err) {
+      alert("Erreur import : fichier illisible ou JSON invalide.");
+    }
+  });
+}
 
 /***********************
  * Choice logging
@@ -363,6 +418,8 @@ window.resetLoop = resetLoop;
 window.exportData = exportData;
 window.setIntentAndStart = setIntentAndStart;
 window.cancelIntent = cancelIntent;
+window.triggerImport = triggerImport;
+
 
 /***********************
  * Init
@@ -390,4 +447,7 @@ window.cancelIntent = cancelIntent;
   renderPrediction();
   renderProfile();
   renderIntentStats();
+  setupImportListener();
+
 })();
+
