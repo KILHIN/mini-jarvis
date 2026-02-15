@@ -217,48 +217,37 @@ function cancelIntent() {
 }
 
 function setIntentAndStart(intent) {
-  const intents = getIntents();
-  intents.push({
-    date: Engine.todayKey(),
-    ts: Date.now(),
-    intent,
-    sessionType: pendingSessionType
-  });
-  setIntents(intents);
-
   if (intent === "auto") {
     alert("Intention faible détectée. Coach recommandé.");
     launchCoach();
     return;
   }
-// Event log unique (source de vérité)
-const events = getEvents();
-events.push({
-  ts: Date.now(),
-  date: Engine.todayKey(),
-  source: pendingSessionType || "instagram",
-  minutes: 10,
-  intent: intent,
-  mode: "allow"
-});
-setEvents(events);
 
-  // Compter 10 min dès l’autorisation
-  saveSession(10);
+  // Event log unique (source de vérité)
+  const events = getEvents();
+  events.push({
+    ts: Date.now(),
+    date: Engine.todayKey(),
+    source: pendingSessionType || "instagram",
+    minutes: 10,
+    intent: intent,
+    mode: "allow"
+  });
+  setEvents(events);
 
-  // Rafraîchir dashboard + stats avant de quitter
+  // Rafraîchir UI avant de quitter
   renderHero();
   drawChart();
   renderPrediction();
   renderProfile();
   renderIntentStats();
 
-  // Lancer le raccourci iOS
   setTimeout(() => {
     window.location.href =
       "shortcuts://run-shortcut?name=" + encodeURIComponent("Mini Jarvis GO");
   }, 250);
 }
+
 
 function startPause() {
   showTimer();
@@ -508,5 +497,6 @@ window.triggerImport = triggerImport;
 })();
 
 function getEvents() { return Storage.get("events", []); }
+
 
 
