@@ -1,40 +1,27 @@
 :root{
-  --bg: #0b0d12;
-  --panel: rgba(255,255,255,0.06);
-  --panel-2: rgba(255,255,255,0.09);
-  --border: rgba(255,255,255,0.10);
+  --bg: #0e1117;
+  --card: rgba(255,255,255,0.05);
+  --border: rgba(255,255,255,0.08);
   --text: rgba(255,255,255,0.92);
-  --muted: rgba(255,255,255,0.70);
-  --muted2: rgba(255,255,255,0.55);
+  --muted: rgba(255,255,255,0.65);
 
-  --blue: #1e90ff;
-  --blue2: #187bcd;
+  --accent: rgba(255,255,255,0.12);
+  --accent-hover: rgba(255,255,255,0.18);
 
-  --green: #34c759;
-  --orange: #ff9500;
-  --red: #ff3b30;
-
-  --shadow: 0 10px 30px rgba(0,0,0,0.35);
-  --radius: 16px;
-  --radius2: 22px;
+  --radius: 18px;
+  --shadow: 0 12px 30px rgba(0,0,0,0.35);
 }
 
-*{ box-sizing: border-box; }
-
-html, body{
-  height: 100%;
+*{
+  box-sizing: border-box;
 }
 
 body{
   margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
-  background: radial-gradient(1200px 800px at 50% -10%, rgba(30,144,255,0.25), transparent 60%),
-              radial-gradient(900px 500px at 20% 110%, rgba(52,199,89,0.12), transparent 55%),
-              var(--bg);
+  background: var(--bg);
   color: var(--text);
-  padding: 18px 14px;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  padding: 20px 16px 40px;
 }
 
 .container{
@@ -42,153 +29,115 @@ body{
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 18px;
 }
 
-/* Header */
+/* TITRES */
+
 h1{
-  margin: 6px 4px 0;
-  font-size: 28px;
-  letter-spacing: -0.02em;
+  margin: 4px 0 8px;
+  font-size: 26px;
+  font-weight: 700;
 }
 
 h2{
-  margin: 0 0 8px;
+  margin: 0 0 14px;
   font-size: 16px;
-  color: var(--muted);
   font-weight: 600;
+  color: var(--muted);
 }
 
-/* Panels / Cards */
+/* CARDS */
+
 .card{
-  background: linear-gradient(180deg, var(--panel), rgba(255,255,255,0.04));
+  background: var(--card);
   border: 1px solid var(--border);
-  border-radius: var(--radius2);
-  padding: 14px 14px;
+  border-radius: var(--radius);
+  padding: 18px;
   box-shadow: var(--shadow);
 }
 
-#context, #dailyBrief{
-  margin: 0;
-  line-height: 1.35;
-}
+/* CONTEXT */
 
 #context{
-  color: var(--muted);
   font-size: 14px;
+  color: var(--muted);
+  margin: 0;
 }
 
 #dailyBrief{
-  color: var(--text);
+  margin: 10px 0 0;
   font-size: 14px;
-  margin-top: 8px;
+  line-height: 1.4;
 }
 
-#loopAlert{
-  margin-top: 10px;
-  background: rgba(255,59,48,0.10);
-  border: 1px solid rgba(255,59,48,0.25);
-  padding: 10px 12px;
-  border-radius: 14px;
-  white-space: pre-line;
-  color: rgba(255,255,255,0.90);
-}
+/* BOUTONS */
 
-/* Buttons */
 button{
-  appearance: none;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 14px 14px;
   width: 100%;
-  background: rgba(255,255,255,0.06);
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--accent);
   color: var(--text);
   font-size: 15px;
-  font-weight: 650;
-  letter-spacing: -0.01em;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.20);
-  transition: transform 0.06s ease, background 0.2s ease, border-color 0.2s ease;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+button + button{
+  margin-top: 14px;
+}
+
+button:hover{
+  background: var(--accent-hover);
 }
 
 button:active{
-  transform: translateY(1px) scale(0.995);
+  transform: scale(0.98);
 }
 
-/* Primary button (autoriser) */
+/* On enlève le bleu du bouton principal */
 #btnAllow{
-  background: linear-gradient(180deg, rgba(30,144,255,0.95), rgba(24,123,205,0.95));
-  border-color: rgba(30,144,255,0.55);
-}
-#btnAllow:hover{
-  background: linear-gradient(180deg, rgba(30,144,255,1), rgba(24,123,205,1));
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.15);
 }
 
-/* Secondary actions */
-#menu button:not(#btnAllow){
-  background: rgba(255,255,255,0.06);
-}
+/* TIMER */
 
-/* Intent block */
-#intentBlock h2{
-  margin: 0 0 10px;
-}
-#intentBlock button{
-  text-align: left;
-}
-
-/* Timer */
-#timer{
-  text-align: center;
-}
 #timeDisplay{
-  font-size: 44px;
-  letter-spacing: -0.03em;
-  margin: 8px 0 2px;
-}
-#timerHint{
-  color: var(--muted2);
-  font-size: 13px;
+  font-size: 42px;
+  text-align: center;
+  margin: 12px 0;
 }
 
-/* Coach */
+/* COACH */
+
 #coachSuggestion{
   white-space: pre-line;
-  text-align: left;
-  line-height: 1.45;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--border);
-  padding: 12px 12px;
-  border-radius: var(--radius);
-  color: rgba(255,255,255,0.90);
   font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 14px;
 }
 
-#coachActions{
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 10px;
-  margin: 12px 0 6px;
-}
+/* STATS */
 
-/* Stats */
 #stats canvas{
   width: 100%;
-  height: auto;
-  display: block;
-  margin-top: 8px;
+  margin-bottom: 16px;
   border-radius: 14px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid var(--border);
 }
 
-#prediction, #profile, #intentStats{
-  margin: 10px 0 0;
-  color: var(--muted);
+#prediction,
+#profile,
+#intentStats{
   font-size: 13px;
-  line-height: 1.35;
+  color: var(--muted);
+  margin-top: 10px;
 }
 
-/* Hidden helper */
+/* UTIL */
+
 .hidden{
   display: none !important;
 }
