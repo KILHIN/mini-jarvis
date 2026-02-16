@@ -219,7 +219,8 @@ events.push({
   ts: now,
   date: Engine.todayKey(),
   source: pendingSessionType || "instagram",
-  minutes: 10,              // planifié (fallback)
+  minutes: 0,  // planifié (fallback)
+  minutesPlanned: 10,
   minutesActual: null,      // réel à remplir à la fermeture
   intent: intent,
   mode: "allow",
@@ -380,16 +381,18 @@ function triggerImport() {
 }
 
 function validatePayload(p) {
-  // Validation minimale et safe
-  if (!p || typeof p !== "object") return { ok: false, msg: "Fichier invalide." };
-  if (!p.config || typeof p.config !== "object") return { ok: false, msg: "config manquante." };
-  if (!Array.isArray(p.history)) return { ok: false, msg: "history manquant." };
-  if (!Array.isArray(p.intents)) return { ok: false, msg: "intents manquant." };
-  if (!p.behavior || typeof p.behavior !== "object") return { ok: false, msg: "behavior manquant." };
-  // optionnel: choiceStats/openPings
-  return { ok: true };
-}
+  if (!p || typeof p !== "object") return { ok:false, msg:"Fichier invalide." };
+  if (!p.config || typeof p.config !== "object") return { ok:false, msg:"config manquante." };
 
+  const hasEvents = Array.isArray(p.events);
+  const hasLegacy = Array.isArray(p.history) && Array.isArray(p.intents);
+
+  if (!hasEvents && !hasLegacy) return { ok:false, msg:"events ou history/intents manquants." };
+  if (!p.behavior || typeof p.behavior !== "object") return { ok:false, msg:"behavior manquant." };
+
+  return { ok:true };
+}
+ 
 function applyImportReplace(p) {
   // Remplacement total des données app
   localStorage.setItem("history", JSON.stringify(p.history || []));
@@ -506,7 +509,7 @@ function applySpentFromURL() {
     events[idx] = {
       ...events[idx],
       minutesActual: spent,
-      minutes: spent
+      minutes: spent,
     };
     setEvents(events);
 
@@ -543,11 +546,10 @@ function applySpentFromURL() {
 
 })();
 
-function getEvents() { return Storage.get("events", []); }
-
 function newSessionId() {
   return Math.random().toString(36).slice(2) + "-" + Date.now().toString(36);
 }
+
 
 
 
