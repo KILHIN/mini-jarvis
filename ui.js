@@ -230,6 +230,29 @@ function ensureDiagnosticsButton() {
   });
 
   statsCard.appendChild(btn);
+  lastError: Storage.get("_lastError", null),
+    if (!document.getElementById("btnResetSafe")) {
+    const btn = document.createElement("button");
+    btn.id = "btnResetSafe";
+    btn.textContent = "Reset safe (garde les données)";
+    btn.style.marginTop = "12px";
+
+    btn.addEventListener("click", () => {
+      const ok = confirm(
+        "Reset safe va réinitialiser uniquement l'état (session active, erreurs, source). Tes events restent."
+      );
+      if (!ok) return;
+
+      localStorage.removeItem("activeSessionId");
+      localStorage.removeItem("_lastError");
+      localStorage.removeItem("lastSrc");
+
+      alert("Reset safe fait. Rechargement…");
+      location.reload();
+    });
+
+    statsCard.appendChild(btn);
+  }
 }
 
   // --- Import JSON (safe) ---
