@@ -1,18 +1,57 @@
+/* =========================================================
+   MAIN — Application Orchestrator
+   - No analytics logic
+   - No DOM rendering logic
+   - Only flow & coordination
+   ========================================================= */
+
+/* =========================================================
+   1) BOOTSTRAP
+   ========================================================= */
+
 if (typeof ensureSchema === "function") ensureSchema();
 
 const DEV_MODE = false;
 
-// main.js
 let pendingSessionType = null;
 let timerInterval = null;
+
+/* =========================================================
+   2) TIMER (Pause only)
+   ========================================================= */
 
 function updateTimerDisplay(seconds){
   const el = document.getElementById("timeDisplay");
   if (!el) return;
+
   const m = Math.floor(seconds/60);
   const s = seconds % 60;
   el.innerText = `${m}:${s<10?"0":""}${s}`;
 }
+
+function startPause(){
+  window.UI.showTimer();
+
+  let timeLeft = 120;
+  updateTimerDisplay(timeLeft);
+
+  if (timerInterval) clearInterval(timerInterval);
+
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimerDisplay(timeLeft);
+
+    if (timeLeft <= 0){
+      clearInterval(timerInterval);
+      alert("Pause terminée. Décision consciente requise.");
+      location.reload();
+    }
+  }, 1000);
+}
+
+/* =========================================================
+   3) SESSION FLOW (Instagram)
+   ========================================================= */
 
 function startSession(type){
   pendingSessionType = type;
@@ -25,6 +64,7 @@ function cancelIntent(){
 }
 
 function setIntentAndStart(intent){
+
   if (intent === "auto"){
     alert("Intention faible détectée. Coach recommandé.");
     window.UI.launchCoach();
@@ -37,55 +77,44 @@ function setIntentAndStart(intent){
   window.EventsStore.addEvent({
     ts: now,
     date: Engine.todayKey(),
-    source: pendingSessionType || "instagram",
-    minutes: 0,            // ✅ pas de comptage immédiat
+    type: "allow",
+    mode: "allow",
+    app: pendingSessionType || "instagram",
+    minutes: 0,
     minutesPlanned: 10,
     minutesActual: null,
     intent,
-    mode: "allow",
     sessionId: sid,
     startedAt: now
   });
 
   window.Sessions.setActiveSessionId(sid);
 
-  // UI refresh (tu vois “session en cours”)
   window.UI.renderAll();
 
-  // Lance le raccourci GO + passe sid automatiquement
+  // Launch iOS Shortcut
   setTimeout(() => {
     window.location.href =
-      "shortcuts://run-shortcut?name=" + encodeURIComponent("Mini Jarvis GO") +
-      "&input=text&text=" + encodeURIComponent(sid);
+      "shortcuts://run-shortcut?name=" +
+      encodeURIComponent("Mini Jarvis GO") +
+      "&input=text&text=" +
+      encodeURIComponent(sid);
   }, 250);
 }
 
-function startPause(){
-  window.UI.showTimer();
-  let timeLeft = 120;
-  updateTimerDisplay(timeLeft);
-
-  if (timerInterval) clearInterval(timerInterval);
-  timerInterval = setInterval(() => {
-    timeLeft--;
-    updateTimerDisplay(timeLeft);
-    if (timeLeft <= 0){
-      clearInterval(timerInterval);
-      alert("Pause terminée. Décision consciente requise.");
-      location.reload();
-    }
-  }, 1000);
-}
+/* =========================================================
+   4) COACH
+   ========================================================= */
 
 function logChoice(type){
-  // Coach choice -> event (minutes 0)
   window.EventsStore.addEvent({
     ts: Date.now(),
     date: Engine.todayKey(),
-    source: "coach",
+    type: "coach",
+    mode: "coach",
+    app: "system",
     minutes: 0,
     intent: null,
-    mode: "coach",
     choice: type
   });
 
@@ -93,20 +122,28 @@ function logChoice(type){
   location.reload();
 }
 
+/* =========================================================
+   5) DATA EXPORT
+   ========================================================= */
+
 function exportData(){
   const payload = {
     exportedAt: new Date().toISOString(),
-    config: { THRESH_ORANGE: 30, THRESH_RED: 60 },
+    schemaVersion: Storage.get("_meta", {}).schemaVersion || 1,
     events: window.EventsStore.getEvents(),
-    behavior: Storage.get("behavior", { useful:0, easy:0 }),
-    lastSrc: Storage.get("lastSrc", null)
+    lastError: Storage.get("_lastError", null)
   };
 
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type:"application/json" });
+  const blob = new Blob(
+    [JSON.stringify(payload, null, 2)],
+    { type:"application/json" }
+  );
+
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
   a.download = `intent-export-${new Date().toISOString().slice(0,10)}.json`;
+
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -114,41 +151,16 @@ function exportData(){
 }
 
 function resetLoop(){
+  if (!DEV_MODE) return;
+
   Storage.remove("openPings");
   alert("openPings reset.");
   location.reload();
 }
 
-// Expose globals used by HTML onclick
-window.startSession = startSession;
-window.cancelIntent = cancelIntent;
-window.setIntentAndStart = setIntentAndStart;
-window.startPause = startPause;
-window.launchCoach = () => window.UI.launchCoach();
-window.logChoice = logChoice;
-window.exportData = exportData;
-window.resetLoop = resetLoop;
-
-window.addEventListener("error", (e) => {
-  try {
-    Storage.set("_lastError", {
-      ts: new Date().toISOString(),
-      message: e.message,
-      source: e.filename,
-      line: e.lineno,
-      col: e.colno
-    });
-  } catch {}
-});
-
-window.addEventListener("unhandledrejection", (e) => {
-  try {
-    Storage.set("_lastError", {
-      ts: new Date().toISOString(),
-      message: String(e.reason || "Unhandled promise rejection")
-    });
-  } catch {}
-});
+/* =========================================================
+   6) ERROR SHIELD
+   ========================================================= */
 
 window.addEventListener("error", (e) => {
   try {
@@ -172,31 +184,44 @@ window.addEventListener("unhandledrejection", (e) => {
     });
   } catch {}
 });
-// Init
+
+/* =========================================================
+   7) GLOBAL EXPORTS (HTML onclick)
+   ========================================================= */
+
+window.startSession = startSession;
+window.cancelIntent = cancelIntent;
+window.setIntentAndStart = setIntentAndStart;
+window.startPause = startPause;
+window.launchCoach = () => window.UI.launchCoach();
+window.logChoice = logChoice;
+window.exportData = exportData;
+window.resetLoop = resetLoop;
+
+/* =========================================================
+   8) INIT
+   ========================================================= */
+
 (function init(){
+
   window.UI.showMenu();
 
-  
-
-  // src param
   const params = new URLSearchParams(window.location.search);
-  const src = params.get("src");
-  if (src) Storage.set("lastSrc", { src, ts: Date.now() });
 
-  // applique spent si retour END
+  const src = params.get("src");
+  if (src) {
+    Storage.set("lastSrc", { src, ts: Date.now() });
+  }
+
   window.Sessions.applySpentFromURL();
   window.Sessions.finalizeStaleSessionsToZero();
 
-
-  // render
   window.UI.renderAll();
 
-  // refresh banner périodique (au cas où)
+  // periodic stale check
   setInterval(() => {
-  window.Sessions.finalizeStaleSessionsToZero();
-  window.UI.renderAll();
-}, 30000);
+    window.Sessions.finalizeStaleSessionsToZero();
+    window.UI.renderAll();
+  }, 30000);
 
-  
 })();
-
