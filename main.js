@@ -1,5 +1,7 @@
 if (typeof ensureSchema === "function") ensureSchema();
 
+const DEV_MODE = false;
+
 // main.js
 let pendingSessionType = null;
 let timerInterval = null;
