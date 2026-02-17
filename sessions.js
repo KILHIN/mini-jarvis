@@ -5,7 +5,26 @@ function newSessionId(){
   return Math.random().toString(36).slice(2) + "-" + Date.now().toString(36);
 }
 
-function setActiveSessionId(sid){ Storage.set("activeSessionId", sid); }
+function setActiveSessionId(sid){ 
+   // Si une session active existe déjà, on la finalise à 0 (safe, mode A)
+  const current = getActiveSessionId();
+  if (current && current !== sid) {
+    const events = window.EventsStore.getEvents();
+    const idx = events.findIndex(e => e.sessionId === current);
+    if (idx !== -1 && events[idx]?.mode === "allow" && events[idx]?.minutesActual == null && !events[idx]?.cancelled) {
+      events[idx] = {
+        ...events[idx],
+        endedAt: Date.now(),
+        minutesActual: 0,
+        minutes: 0,
+        staleFinalized: true
+      };
+      window.EventsStore.setEvents(events);
+    }
+  }  
+  Storage.set("activeSessionId", sid); 
+
+}
 function getActiveSessionId(){ return Storage.get("activeSessionId", null); }
 function clearActiveSessionId(){ Storage.remove("activeSessionId"); }
 
