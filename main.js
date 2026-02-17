@@ -127,6 +127,27 @@ window.logChoice = logChoice;
 window.exportData = exportData;
 window.resetLoop = resetLoop;
 
+window.addEventListener("error", (e) => {
+  try {
+    Storage.set("_lastError", {
+      ts: new Date().toISOString(),
+      message: e.message,
+      source: e.filename,
+      line: e.lineno,
+      col: e.colno
+    });
+  } catch {}
+});
+
+window.addEventListener("unhandledrejection", (e) => {
+  try {
+    Storage.set("_lastError", {
+      ts: new Date().toISOString(),
+      message: String(e.reason || "Unhandled promise rejection")
+    });
+  } catch {}
+});
+
 // Init
 (function init(){
   window.UI.showMenu();
