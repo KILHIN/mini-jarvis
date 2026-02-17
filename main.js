@@ -129,6 +129,8 @@ window.resetLoop = resetLoop;
 (function init(){
   window.UI.showMenu();
 
+  
+
   // src param
   const params = new URLSearchParams(window.location.search);
   const src = params.get("src");
@@ -136,11 +138,18 @@ window.resetLoop = resetLoop;
 
   // applique spent si retour END
   window.Sessions.applySpentFromURL();
+  window.Sessions.finalizeStaleSessionsToZero();
+
 
   // render
   window.UI.renderAll();
 
   // refresh banner périodique (au cas où)
-  setInterval(() => window.UI.renderAll(), 5000);
+  setInterval(() => {
+  window.Sessions.finalizeStaleSessionsToZero();
+  window.UI.renderAll();
+}, 30000);
+
+  
 })();
 
