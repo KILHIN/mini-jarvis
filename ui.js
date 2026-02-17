@@ -231,3 +231,47 @@ function ensureDiagnosticsButton() {
 
   statsCard.appendChild(btn);
 }
+
+  // --- Import JSON (safe) ---
+  if (!document.getElementById("importFile")) {
+    const input = document.createElement("input");
+    input.id = "importFile";
+    input.type = "file";
+    input.accept = "application/json";
+    input.className = "hidden";
+    statsCard.appendChild(input);
+
+    const btnImport = document.createElement("button");
+    btnImport.id = "btnImport";
+    btnImport.textContent = "Importer (JSON)";
+    btnImport.style.marginTop = "12px";
+
+    btnImport.addEventListener("click", () => {
+      input.value = "";
+      input.click();
+    });
+
+    input.addEventListener("change", async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const payload = JSON.parse(text);
+
+        const result = window.ImportExport.validate(payload);
+        if (!result.ok) return alert("Import refusé : " + result.msg);
+
+        const ok = confirm("Importer va remplacer tes données locales. Continuer ?");
+        if (!ok) return;
+
+        window.ImportExport.applyReplace(payload);
+        alert("Import terminé. Rechargement…");
+        location.reload();
+      } catch (e) {
+        alert("Import impossible : JSON invalide.");
+      }
+    });
+
+    statsCard.appendChild(btnImport);
+  }
