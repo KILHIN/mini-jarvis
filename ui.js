@@ -184,6 +184,8 @@ function renderAll(){
   drawChart();
   renderPrediction();
   renderIntentStats();
+  ensureDiagnosticsButton();
+
 }
 
 window.UI = {
@@ -191,3 +193,41 @@ window.UI = {
   renderAll, launchCoach
 };
 
+function ensureDiagnosticsButton() {
+  const statsCard = document.getElementById("stats");
+  if (!statsCard) return;
+
+  if (document.getElementById("btnDiag")) return;
+
+  const btn = document.createElement("button");
+  btn.id = "btnDiag";
+  btn.textContent = "Copier diagnostic";
+  btn.style.marginTop = "12px";
+
+  btn.addEventListener("click", async () => {
+    const events = window.EventsStore.getEvents();
+    const activeId = Storage.get("activeSessionId", null);
+    const last = events.length ? events[events.length - 1] : null;
+
+    const diag = {
+      ts: new Date().toISOString(),
+      url: window.location.href,
+      schemaVersion: Storage.get("_meta", { schemaVersion: 1 }).schemaVersion,
+      eventsCount: events.length,
+      activeSessionId: activeId,
+      lastEvent: last
+    };
+
+    const txt = JSON.stringify(diag, null, 2);
+
+    try {
+      await navigator.clipboard.writeText(txt);
+      alert("Diagnostic copié.");
+    } catch {
+      // fallback : prompt
+      prompt("Copie ce diagnostic :", txt);
+    }
+  });
+
+  statsCard.appendChild(btn);
+}
