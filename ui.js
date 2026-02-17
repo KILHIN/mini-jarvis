@@ -1,17 +1,33 @@
-// ui.js
+/* =========================================================
+   UI LAYER — DOM Rendering Only
+   No business logic here.
+   ========================================================= */
+
+/* =========================================================
+   1) DOM HELPERS
+   ========================================================= */
+
 function $(id){ return document.getElementById(id); }
 function has(id){ return !!document.getElementById(id); }
 
-// Panels
+/* =========================================================
+   2) PANEL CONTROL
+   ========================================================= */
+
 function hideAllPanels(){
-  ["menu","intentBlock","timer","coach"].forEach(id => has(id) && $(id).classList.add("hidden"));
+  ["menu","intentBlock","timer","coach"]
+    .forEach(id => has(id) && $(id).classList.add("hidden"));
 }
+
 function showMenu(){ hideAllPanels(); has("menu") && $("menu").classList.remove("hidden"); }
 function showIntent(){ hideAllPanels(); has("intentBlock") && $("intentBlock").classList.remove("hidden"); }
 function showTimer(){ hideAllPanels(); has("timer") && $("timer").classList.remove("hidden"); }
 function showCoach(){ hideAllPanels(); has("coach") && $("coach").classList.remove("hidden"); }
 
-// Banner injection (dans .hero)
+/* =========================================================
+   3) SESSION BANNER
+   ========================================================= */
+
 function ensureSessionBanner(){
   const hero = document.querySelector(".hero");
   if (!hero) return null;
@@ -21,8 +37,7 @@ function ensureSessionBanner(){
 
   el = document.createElement("div");
   el.id = "sessionBanner";
-  el.className = "sessionBanner";
-  el.style.display = "none";
+  el.className = "sessionBanner hidden";
   el.innerHTML = `
     <div class="sessionBannerRow">
       <div>
@@ -34,12 +49,12 @@ function ensureSessionBanner(){
   `;
   hero.appendChild(el);
 
-  const btn = document.getElementById("btnStopSession");
-  if (btn) btn.addEventListener("click", () => {
-    window.Sessions.stopActiveSession();
-    renderAll(); // refresh UI
-    alert("Session stoppée.");
-  });
+  document.getElementById("btnStopSession")
+    ?.addEventListener("click", () => {
+      window.Sessions.stopActiveSession();
+      renderAll();
+      alert("Session stoppée.");
+    });
 
   return el;
 }
@@ -52,67 +67,88 @@ function renderSessionBanner(){
   const active = window.Sessions.getActiveSession(events);
 
   if (!active){
-    banner.style.display = "none";
+    banner.classList.add("hidden");
     return;
   }
 
   const planned = active.minutesPlanned ?? 10;
-  const start = active.startedAt ? window.Sessions.formatHHMM(active.startedAt) : "—";
-  const src = active.source || "instagram";
+  const start = active.startedAt
+    ? window.Sessions.formatHHMM(active.startedAt)
+    : "—";
 
-  const textEl = document.getElementById("sessionBannerText");
-  if (textEl) textEl.textContent = `Source: ${src} • Début: ${start} • Plan: ${planned} min`;
+  $("sessionBannerText").textContent =
+    `Début: ${start} • Plan: ${planned} min`;
 
-  banner.style.display = "block";
+  banner.classList.remove("hidden");
 }
 
-// ---- Renders (basés events) ----
+/* =========================================================
+   4) HERO RENDER
+   ========================================================= */
+
 const THRESH_ORANGE = 30;
 const THRESH_RED = 60;
 
 function renderHero(){
   const events = window.EventsStore.getEvents();
-  const totalToday = Engine.calcTodayTimeFromEvents(events);
-  const pred = Engine.trendPredictionFromEvents(events, THRESH_ORANGE, THRESH_RED);
-  const intents7 = Engine.intentStats7dFromEvents(events);
 
-  // pression depuis events coach si tu l’as ajouté, sinon fallback à behavior
-  const pressure = (Engine.jarvisPressureFromEvents)
-    ? Engine.jarvisPressureFromEvents(events)
-    : Engine.jarvisPressure(Storage.get("behavior", { useful:0, easy:0 }));
+  const totalToday = Engine.totalToday(events);
+  const trend = Engine.trendPrediction(events, THRESH_ORANGE, THRESH_RED);
+  const intents7 = Engine.intentStats7d(events);
+  const pressure = Engine.jarvisPressure(events);
 
-  let state = "VERT";
-  let color = "#34c759";
-  if (totalToday >= THRESH_RED){ state="ROUGE"; color="#ff3b30"; }
-  else if (totalToday >= THRESH_ORANGE){ state="ORANGE"; color="#ff9500"; }
+  const state = Engine.stateFromThresholds(
+    totalToday,
+    trend.avg,
+    THRESH_ORANGE,
+    THRESH_RED
+  );
 
-  has("todayMinutes") && ($("todayMinutes").innerText = String(totalToday));
-  has("stateLabel") && ($("stateLabel").innerText = `État: ${state}`);
+  // Minutes
+  has("todayMinutes") && ($("todayMinutes").innerText = totalToday);
 
+  // State label
+  const stateMap = {
+    GREEN: "VERT",
+    ORANGE: "ORANGE",
+    RED: "ROUGE"
+  };
+
+  has("stateLabel") &&
+    ($("stateLabel").innerText = `État: ${stateMap[state]}`);
+
+  // State dot class
   if (has("stateDot")){
-    $("stateDot").style.background = `linear-gradient(180deg, ${color}, rgba(255,255,255,0.08))`;
-    $("stateDot").style.borderColor = `${color}55`;
+    $("stateDot").classList.remove("green","orange","red");
+    if (state === "GREEN") $("stateDot").classList.add("green");
+    if (state === "ORANGE") $("stateDot").classList.add("orange");
+    if (state === "RED") $("stateDot").classList.add("red");
   }
 
-  const lastSrc = Storage.get("lastSrc", null)?.src;
-  has("sourceLabel") && ($("sourceLabel").innerText = lastSrc ? `Source: ${lastSrc}` : "");
-
+  // KPIs
   if (has("kpiTrend")){
-    const t = pred.trendText.includes("augmentation") ? "↑" :
-              pred.trendText.includes("baisse") ? "↓" : "→";
+    const t =
+      trend.trendText.includes("augmentation") ? "↑" :
+      trend.trendText.includes("baisse") ? "↓" : "→";
     $("kpiTrend").innerText = t;
   }
+
   has("kpiPressure") && ($("kpiPressure").innerText = `${pressure}/3`);
-  has("kpiAuto") && ($("kpiAuto").innerText = intents7.total ? `${intents7.pAuto}%` : "—");
+  has("kpiAuto") &&
+    ($("kpiAuto").innerText = intents7.total ? `${intents7.pAuto}%` : "—");
 }
+
+/* =========================================================
+   5) CHART
+   ========================================================= */
 
 function drawChart(){
   if (!has("chart")) return;
+
   const canvas = $("chart");
   const ctx = canvas.getContext("2d");
-
   const events = window.EventsStore.getEvents();
-  const data = Engine.last7DaysDataFromEvents(events);
+  const data = Engine.last7DaysMap(events);
 
   const values = Object.values(data);
   const dates = Object.keys(data);
@@ -131,8 +167,8 @@ function drawChart(){
     const x = i * (barWidth + gap) + 10;
     const y = 160 - barHeight;
 
-    if (value >= THRESH_RED) ctx.fillStyle = "#ff3b30";
-    else if (value >= THRESH_ORANGE) ctx.fillStyle = "#ff9500";
+    if (value >= THRESH_RED) ctx.fillStyle = "#ff453a";
+    else if (value >= THRESH_ORANGE) ctx.fillStyle = "#ff9f0a";
     else ctx.fillStyle = "#34c759";
 
     ctx.fillRect(x,y,barWidth,barHeight);
@@ -146,37 +182,55 @@ function drawChart(){
   });
 }
 
+/* =========================================================
+   6) TEXT STATS
+   ========================================================= */
+
 function renderPrediction(){
   if (!has("prediction")) return;
+
   const events = window.EventsStore.getEvents();
-  const pred = Engine.trendPredictionFromEvents(events, THRESH_ORANGE, THRESH_RED);
+  const pred = Engine.trendPrediction(events, THRESH_ORANGE, THRESH_RED);
+
   $("prediction").innerText =
-    `Moyenne 7j : ${pred.avg} min/j. ${pred.trendText} Projection semaine : ${pred.weeklyProjection} min. Risque : ${pred.risk}.`;
+    `Moyenne 7j : ${pred.avg} min/j. ` +
+    `${pred.trendText} ` +
+    `Projection semaine : ${pred.weeklyProjection} min. ` +
+    `Risque : ${pred.risk}.`;
 }
 
 function renderIntentStats(){
   if (!has("intentStats")) return;
+
   const events = window.EventsStore.getEvents();
-  const s = Engine.intentStats7dFromEvents(events);
+  const s = Engine.intentStats7d(events);
+
   $("intentStats").innerText = s.total
     ? `Intentions (7j) : Reply ${s.pReply}% | Fun ${s.pFun}% | Auto ${s.pAuto}% (n=${s.total}).`
     : "Intentions (7j) : aucune donnée.";
 }
 
-// Coach affichage (si tu as Engine.coachSuggestion event-driven)
+/* =========================================================
+   7) COACH
+   ========================================================= */
+
 function launchCoach(){
   const events = window.EventsStore.getEvents();
-  const intents7 = Engine.intentStats7dFromEvents(events);
 
-  if (has("coachSuggestion") && Engine.coachSuggestion){
-    $("coachSuggestion").innerText = Engine.coachSuggestion({
-      events,
-      thresholds: { THRESH_ORANGE, THRESH_RED },
-      intents7
-    });
+  if (has("coachSuggestion")){
+    $("coachSuggestion").innerText =
+      Engine.coachSuggestion({
+        events,
+        thresholds: { THRESH_ORANGE, THRESH_RED }
+      });
   }
+
   showCoach();
 }
+
+/* =========================================================
+   8) GLOBAL RENDER
+   ========================================================= */
 
 function renderAll(){
   renderHero();
@@ -184,117 +238,17 @@ function renderAll(){
   drawChart();
   renderPrediction();
   renderIntentStats();
-  ensureDiagnosticsButton();
-
 }
+
+/* =========================================================
+   EXPORT
+   ========================================================= */
 
 window.UI = {
-  showMenu, showIntent, showTimer, showCoach,
-  renderAll, launchCoach
+  showMenu,
+  showIntent,
+  showTimer,
+  showCoach,
+  renderAll,
+  launchCoach
 };
-
-function ensureDiagnosticsButton() {
-  const statsCard = document.getElementById("stats");
-  if (!statsCard) return;
-
-  if (document.getElementById("btnDiag")) return;
-
-  const btn = document.createElement("button");
-  btn.id = "btnDiag";
-  btn.textContent = "Copier diagnostic";
-  btn.style.marginTop = "12px";
-
-  btn.addEventListener("click", async () => {
-    const events = window.EventsStore.getEvents();
-    const activeId = Storage.get("activeSessionId", null);
-    const last = events.length ? events[events.length - 1] : null;
-
-    const diag = {
-      ts: new Date().toISOString(),
-      url: window.location.href,
-      schemaVersion: Storage.get("_meta", { schemaVersion: 1 }).schemaVersion,
-      eventsCount: events.length,
-      activeSessionId: activeId,
-      lastEvent: last
-    };
-
-    const txt = JSON.stringify(diag, null, 2);
-
-    try {
-      await navigator.clipboard.writeText(txt);
-      alert("Diagnostic copié.");
-    } catch {
-      // fallback : prompt
-      prompt("Copie ce diagnostic :", txt);
-    }
-  });
-
-  statsCard.appendChild(btn);
-  lastError: Storage.get("_lastError", null),
-    if (!document.getElementById("btnResetSafe")) {
-    const btn = document.createElement("button");
-    btn.id = "btnResetSafe";
-    btn.textContent = "Reset safe (garde les données)";
-    btn.style.marginTop = "12px";
-
-    btn.addEventListener("click", () => {
-      const ok = confirm(
-        "Reset safe va réinitialiser uniquement l'état (session active, erreurs, source). Tes events restent."
-      );
-      if (!ok) return;
-
-      localStorage.removeItem("activeSessionId");
-      localStorage.removeItem("_lastError");
-      localStorage.removeItem("lastSrc");
-
-      alert("Reset safe fait. Rechargement…");
-      location.reload();
-    });
-
-    statsCard.appendChild(btn);
-  }
-}
-
-  // --- Import JSON (safe) ---
-  if (!document.getElementById("importFile")) {
-    const input = document.createElement("input");
-    input.id = "importFile";
-    input.type = "file";
-    input.accept = "application/json";
-    input.className = "hidden";
-    statsCard.appendChild(input);
-
-    const btnImport = document.createElement("button");
-    btnImport.id = "btnImport";
-    btnImport.textContent = "Importer (JSON)";
-    btnImport.style.marginTop = "12px";
-
-    btnImport.addEventListener("click", () => {
-      input.value = "";
-      input.click();
-    });
-
-    input.addEventListener("change", async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-
-      try {
-        const text = await file.text();
-        const payload = JSON.parse(text);
-
-        const result = window.ImportExport.validate(payload);
-        if (!result.ok) return alert("Import refusé : " + result.msg);
-
-        const ok = confirm("Importer va remplacer tes données locales. Continuer ?");
-        if (!ok) return;
-
-        window.ImportExport.applyReplace(payload);
-        alert("Import terminé. Rechargement…");
-        location.reload();
-      } catch (e) {
-        alert("Import impossible : JSON invalide.");
-      }
-    });
-
-    statsCard.appendChild(btnImport);
-  }
