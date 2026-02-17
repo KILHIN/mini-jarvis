@@ -150,6 +150,28 @@ window.addEventListener("unhandledrejection", (e) => {
   } catch {}
 });
 
+window.addEventListener("error", (e) => {
+  try {
+    Storage.set("_lastError", {
+      ts: new Date().toISOString(),
+      type: "error",
+      message: e.message || "Unknown error",
+      source: e.filename || "",
+      line: e.lineno || null,
+      col: e.colno || null
+    });
+  } catch {}
+});
+
+window.addEventListener("unhandledrejection", (e) => {
+  try {
+    Storage.set("_lastError", {
+      ts: new Date().toISOString(),
+      type: "unhandledrejection",
+      message: String(e.reason || "Unhandled promise rejection")
+    });
+  } catch {}
+});
 // Init
 (function init(){
   window.UI.showMenu();
