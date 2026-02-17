@@ -90,14 +90,40 @@ function applySpentFromURL(){
     const events = window.EventsStore.getEvents();
     const idx = events.findIndex(e => e.sessionId === sid);
     if (idx === -1) return;
-    if (events[idx]?.cancelled) return; // STOP utilisé
 
+    const event = events[idx];
+
+    // 🔒 Si déjà finalisé ou annulé → on ignore
+    if (event.cancelled || event.minutesActual != null) {
+      return;
+    }
+
+    // 🔒 Mise à jour sécurisée
     events[idx] = {
-      ...events[idx],
+      ...event,
       minutesActual: spent,
       minutes: spent,
-      endedAt: Date.now()
+      endedAt: Date.now(),
+      finalized: true
     };
+
+    window.EventsStore.setEvents(events);
+
+    const activeId = getActiveSessionId();
+    if (activeId === sid) clearActiveSessionId();
+
+    // Nettoyage URL
+    params.delete("sid");
+    params.delete("spent");
+    const clean = params.toString();
+    const newUrl = window.location.pathname + (clean ? `?${clean}` : "");
+    window.history.replaceState({}, "", newUrl);
+
+  } catch(e){
+    console.warn("applySpentFromURL error:", e);
+  }
+}
+
 
     window.EventsStore.setEvents(events);
 
