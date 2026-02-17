@@ -1,3 +1,5 @@
+const SESSION_MAX_AGE_MS = 30 * 60 * 1000; // 30 min => auto-finalize
+
 // sessions.js
 function newSessionId(){
   return Math.random().toString(36).slice(2) + "-" + Date.now().toString(36);
@@ -101,6 +103,39 @@ function formatHHMM(ts){
   return `${hh}:${mm}`;
 }
 
+function finalizeStaleSessionsToZero() {
+  const now = Date.now();
+  const events = window.EventsStore.getEvents();
+
+  let changed = false;
+
+  for (let i = events.length - 1; i >= 0; i--) {
+    const e = events[i];
+    if (e?.mode !== "allow") continue;
+    if (e.cancelled) continue;
+    if (e.minutesActual != null) continue; // déjà finalisé
+    if (!e.startedAt) continue;
+
+    const age = now - e.startedAt;
+    if (age >= SESSION_MAX_AGE_MS) {
+      events[i] = {
+        ...e,
+        endedAt: now,
+        minutesActual: 0,
+        minutes: 0,
+        staleFinalized: true
+      };
+      changed = true;
+
+      // si c’était la session active, on clear
+      const activeId = getActiveSessionId();
+      if (activeId && activeId === e.sessionId) clearActiveSessionId();
+    }
+  }
+
+  if (changed) window.EventsStore.setEvents(events);
+}
+
 window.Sessions = {
   newSessionId,
   setActiveSessionId,
@@ -109,6 +144,8 @@ window.Sessions = {
   getActiveSession,
   stopActiveSession,
   applySpentFromURL,
-  formatHHMM
+  formatHHMM,
+  finalizeStaleSessionsToZero,
+
 };
 
