@@ -1,17 +1,31 @@
-const SESSION_MAX_AGE_MS = 30 * 60 * 1000; // 30 min => auto-finalize
+// sessions.js (clean)
+const SESSION_MAX_AGE_MS = 30 * 60 * 1000; // 30 min => auto-finalize (mode A)
 
-// sessions.js
-function newSessionId(){
+function newSessionId() {
   return Math.random().toString(36).slice(2) + "-" + Date.now().toString(36);
 }
 
-function setActiveSessionId(sid){ 
-   // Si une session active existe déjà, on la finalise à 0 (safe, mode A)
+function getActiveSessionId() {
+  return Storage.get("activeSessionId", null);
+}
+
+function clearActiveSessionId() {
+  Storage.remove("activeSessionId");
+}
+
+function setActiveSessionId(sid) {
+  // Si une session active existe déjà, on la finalise à 0 (safe, mode A)
   const current = getActiveSessionId();
   if (current && current !== sid) {
     const events = window.EventsStore.getEvents();
     const idx = events.findIndex(e => e.sessionId === current);
-    if (idx !== -1 && events[idx]?.mode === "allow" && events[idx]?.minutesActual == null && !events[idx]?.cancelled) {
+
+    if (
+      idx !== -1 &&
+      events[idx]?.mode === "allow" &&
+      events[idx]?.minutesActual == null &&
+      !events[idx]?.cancelled
+    ) {
       events[idx] = {
         ...events[idx],
         endedAt: Date.now(),
@@ -21,35 +35,46 @@ function setActiveSessionId(sid){
       };
       window.EventsStore.setEvents(events);
     }
-  }  
-  Storage.set("activeSessionId", sid); 
+  }
 
+  Storage.set("activeSessionId", sid);
 }
-function getActiveSessionId(){ return Storage.get("activeSessionId", null); }
-function clearActiveSessionId(){ Storage.remove("activeSessionId"); }
 
-function getActiveSession(events){
+function getActiveSession(events) {
   const now = Date.now();
   const maxAgeMs = 3 * 60 * 60 * 1000; // 3h
   const activeId = getActiveSessionId();
 
-  if (activeId){
+  if (activeId) {
     const e = events.find(x => x.sessionId === activeId);
-    if (e && e.mode === "allow" && e.minutesActual == null && !e.cancelled && e.startedAt && (now - e.startedAt) <= maxAgeMs) {
+    if (
+      e &&
+      e.mode === "allow" &&
+      e.minutesActual == null &&
+      !e.cancelled &&
+      e.startedAt &&
+      (now - e.startedAt) <= maxAgeMs
+    ) {
       return e;
     }
   }
 
-  for (let i = events.length - 1; i >= 0; i--){
+  for (let i = events.length - 1; i >= 0; i--) {
     const e = events[i];
-    if (e.mode === "allow" && e.minutesActual == null && !e.cancelled && e.startedAt && (now - e.startedAt) <= maxAgeMs) {
+    if (
+      e?.mode === "allow" &&
+      e.minutesActual == null &&
+      !e.cancelled &&
+      e.startedAt &&
+      (now - e.startedAt) <= maxAgeMs
+    ) {
       return e;
     }
   }
   return null;
 }
 
-function stopActiveSession(){
+function stopActiveSession() {
   const events = window.EventsStore.getEvents();
   const active = getActiveSession(events);
 
@@ -69,15 +94,16 @@ function stopActiveSession(){
     cancelled: true,
     endedAt: Date.now(),
     minutesActual: 0,
-    minutes: 0
+    minutes: 0,
+    finalized: true
   };
 
   window.EventsStore.setEvents(events);
   clearActiveSessionId();
 }
 
-function applySpentFromURL(){
-  try{
+function applySpentFromURL() {
+  try {
     const params = new URLSearchParams(window.location.search);
     const sid = params.get("sid");
     const spentRaw = params.get("spent");
@@ -93,12 +119,9 @@ function applySpentFromURL(){
 
     const event = events[idx];
 
-    // 🔒 Si déjà finalisé ou annulé → on ignore
-    if (event.cancelled || event.minutesActual != null) {
-      return;
-    }
+    // Idempotence: si déjà finalisé / annulé -> ignore
+    if (event.cancelled || event.minutesActual != null || event.finalized) return;
 
-    // 🔒 Mise à jour sécurisée
     events[idx] = {
       ...event,
       minutesActual: spent,
@@ -112,53 +135,27 @@ function applySpentFromURL(){
     const activeId = getActiveSessionId();
     if (activeId === sid) clearActiveSessionId();
 
-    // Nettoyage URL
-    params.delete("sid");
-    params.delete("spent");
-    const clean = params.toString();
-    const newUrl = window.location.pathname + (clean ? `?${clean}` : "");
-    window.history.replaceState({}, "", newUrl);
-
-  } catch(e){
-    console.warn("applySpentFromURL error:", e);
-  }
-}
-
-
-    window.EventsStore.setEvents(events);
-
-    const activeId = getActiveSessionId();
-    if (activeId === sid) clearActiveSessionId();
-
     // Nettoie l’URL
     params.delete("sid");
     params.delete("spent");
     const clean = params.toString();
     const newUrl = window.location.pathname + (clean ? `?${clean}` : "");
     window.history.replaceState({}, "", newUrl);
-  } catch(e){
+  } catch (e) {
     console.warn("applySpentFromURL error:", e);
   }
-}
-
-function formatHHMM(ts){
-  const d = new Date(ts);
-  const hh = String(d.getHours()).padStart(2,"0");
-  const mm = String(d.getMinutes()).padStart(2,"0");
-  return `${hh}:${mm}`;
 }
 
 function finalizeStaleSessionsToZero() {
   const now = Date.now();
   const events = window.EventsStore.getEvents();
-
   let changed = false;
 
   for (let i = events.length - 1; i >= 0; i--) {
     const e = events[i];
     if (e?.mode !== "allow") continue;
     if (e.cancelled) continue;
-    if (e.minutesActual != null) continue; // déjà finalisé
+    if (e.minutesActual != null || e.finalized) continue;
     if (!e.startedAt) continue;
 
     const age = now - e.startedAt;
@@ -168,17 +165,24 @@ function finalizeStaleSessionsToZero() {
         endedAt: now,
         minutesActual: 0,
         minutes: 0,
-        staleFinalized: true
+        staleFinalized: true,
+        finalized: true
       };
       changed = true;
 
-      // si c’était la session active, on clear
       const activeId = getActiveSessionId();
       if (activeId && activeId === e.sessionId) clearActiveSessionId();
     }
   }
 
   if (changed) window.EventsStore.setEvents(events);
+}
+
+function formatHHMM(ts) {
+  const d = new Date(ts);
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
 }
 
 window.Sessions = {
@@ -189,8 +193,6 @@ window.Sessions = {
   getActiveSession,
   stopActiveSession,
   applySpentFromURL,
-  formatHHMM,
   finalizeStaleSessionsToZero,
-
+  formatHHMM
 };
-
