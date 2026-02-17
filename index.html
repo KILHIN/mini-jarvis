@@ -1,124 +1,153 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mini Jarvis</title>
+  <!-- Meta -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- App identity -->
+  <title>Intent</title>
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
+  <main class="container">
 
-  <div class="container">
-   <div class="brand">
-  <h1>Intent</h1>
-  <div class="tagline">Screen discipline system</div>
-</div>
+    <!-- Brand -->
+    <header class="brand">
+      <h1>Intent</h1>
+      <div class="tagline">Screen discipline system</div>
+    </header>
 
+    <!-- HERO / DASHBOARD -->
+    <section class="card hero" aria-label="Dashboard">
+      <div class="heroTop">
+        <div id="stateDot" class="stateDot" aria-hidden="true"></div>
 
-   <!-- HERO / DASHBOARD -->
-<div class="card hero">
-  <div class="heroTop">
-    <div id="stateDot" class="stateDot"></div>
+        <div class="heroMain">
+          <div class="heroValue">
+            <span id="todayMinutes">0</span><span class="unit">min</span>
+          </div>
 
-    <div class="heroMain">
-      <div class="heroValue">
-        <span id="todayMinutes">0</span><span class="unit">min</span>
+          <div class="heroLabel">
+            <span id="stateLabel">État: VERT</span>
+            <span id="sourceLabel" class="muted"></span>
+          </div>
+        </div>
       </div>
-      <div class="heroLabel">
-        <span id="stateLabel">État: VERT</span>
-        <span id="sourceLabel" class="muted"></span>
+
+      <div class="kpis" aria-label="Indicateurs">
+        <div class="kpi">
+          <div class="kpiTitle">Tendance</div>
+          <div id="kpiTrend" class="kpiValue">—</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpiTitle">Pression</div>
+          <div id="kpiPressure" class="kpiValue">0/3</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpiTitle">Auto (7j)</div>
+          <div id="kpiAuto" class="kpiValue">—</div>
+        </div>
       </div>
-    </div>
-  </div>
 
-  <div class="kpis">
-    <div class="kpi">
-      <div class="kpiTitle">Tendance</div>
-      <div id="kpiTrend" class="kpiValue">—</div>
-    </div>
-    <div class="kpi">
-      <div class="kpiTitle">Pression</div>
-      <div id="kpiPressure" class="kpiValue">0/3</div>
-    </div>
-    <div class="kpi">
-      <div class="kpiTitle">Auto (7j)</div>
-      <div id="kpiAuto" class="kpiValue">—</div>
-    </div>
-  </div>
+      <!-- Loop alert (shown only if loop detected) -->
+      <p id="loopAlert" class="hidden" role="status" aria-live="polite"></p>
+    </section>
 
-  <p id="loopAlert" class="hidden"></p>
-</div>
-
-
-    <!-- Menu -->
-    <div id="menu" class="card">
+    <!-- CONTROLS -->
+    <section id="menu" class="card" aria-label="Contrôle">
       <h2>Contrôle</h2>
-      <button id="btnAllow" onclick="startSession('instagram')">Autoriser Instagram (10 min)</button>
-      <button onclick="startPause()">Pause 2 minutes</button>
-      <button onclick="launchCoach()">Coach personnel</button>
-    </div>
 
-    <!-- Intent -->
-    <div id="intentBlock" class="card hidden">
+      <button id="btnAllow" onclick="startSession('instagram')">
+        Autoriser Instagram (10 min)
+      </button>
+
+      <button onclick="startPause()">
+        Pause 2 minutes
+      </button>
+
+      <button onclick="launchCoach()">
+        Coach personnel
+      </button>
+    </section>
+
+    <!-- INTENT (shown after "Autoriser") -->
+    <section id="intentBlock" class="card hidden" aria-label="Intention">
       <h2>Intention</h2>
-      <button onclick="setIntentAndStart('reply')">Répondre / contenu envoyé</button>
-      <button onclick="setIntentAndStart('fun')">Divertissement conscient</button>
-      <button onclick="setIntentAndStart('auto')">Automatique / ennui</button>
-      <button onclick="cancelIntent()">Annuler</button>
-    </div>
 
-    <!-- Timer panel (mainly for Pause; sessions use iOS timer) -->
-    <div id="timer" class="card hidden">
+      <button onclick="setIntentAndStart('reply')">
+        Répondre / contenu envoyé
+      </button>
+
+      <button onclick="setIntentAndStart('fun')">
+        Divertissement conscient
+      </button>
+
+      <button onclick="setIntentAndStart('auto')">
+        Automatique / ennui
+      </button>
+
+      <button onclick="cancelIntent()">
+        Annuler
+      </button>
+    </section>
+
+    <!-- TIMER (mainly for pause; Instagram uses iOS timer) -->
+    <section id="timer" class="card hidden" aria-label="Minuteur">
       <h2>Minuteur</h2>
       <div id="timeDisplay">10:00</div>
-      <p id="timerHint">Le minuteur iOS gère la session Instagram. Ici c’est surtout pour la pause.</p>
-    </div>
+      <p id="timerHint">
+        Le minuteur iOS gère la session Instagram. Ici c’est surtout pour la pause.
+      </p>
+    </section>
 
-    <!-- Coach -->
-    <div id="coach" class="card hidden">
+    <!-- COACH -->
+    <section id="coach" class="card hidden" aria-label="Coach">
       <h2>Analyse Jarvis</h2>
       <p id="coachSuggestion"></p>
 
-      <div id="coachActions">
+      <div id="coachActions" aria-label="Choix">
         <button onclick="logChoice('primary')">Je fais la recommandation</button>
         <button onclick="logChoice('alt1')">Je prends alternative 1</button>
         <button onclick="logChoice('alt2')">Je prends alternative 2</button>
       </div>
 
       <button onclick="location.reload()">Retour</button>
+    </section>
 
-    </div>
-
-    <!-- Stats -->
-    <div id="stats" class="card">
+    <!-- STATS -->
+    <section id="stats" class="card" aria-label="Statistiques">
       <h2>Analyse des 7 derniers jours</h2>
       <canvas id="chart" width="350" height="200"></canvas>
 
+      <!-- Data -->
       <button onclick="exportData()">Exporter données (JSON)</button>
+
       <input id="importFile" type="file" accept="application/json" class="hidden" />
       <button onclick="triggerImport()">Importer données (JSON)</button>
 
+      <!-- Dev -->
       <button onclick="resetLoop()">Reset boucle (dev)</button>
 
+      <!-- Text outputs -->
       <p id="prediction"></p>
       <p id="profile"></p>
       <p id="intentStats"></p>
-    </div>
-  </div>
+    </section>
 
- <script src="storage.js"></script>
-<script src="engine.js"></script>
+  </main>
 
-<script src="events.store.js"></script>
-<script src="sessions.js"></script>
-<script src="import-export.js"></script>
-<script src="ui.js"></script>
-<script src="main.js"></script>
+  <!-- Scripts (order matters) -->
+  <script src="storage.js"></script>
+  <script src="engine.js"></script>
 
+  <script src="events.store.js"></script>
+  <script src="sessions.js"></script>
+  <script src="import-export.js"></script>
+  <script src="ui.js"></script>
+  <script src="main.js"></script>
 </body>
 </html>
-
-
-
-
-
