@@ -225,25 +225,44 @@ window.logOutcome = logOutcome;
    ========================================================= */
 
 (function init(){
+  try {
+    // 1) Sanity checks
+    if (!window.Storage) throw new Error("Storage manquant");
+    if (!window.EventsStore) throw new Error("EventsStore manquant (events.store.js)");
+    if (!window.Sessions) throw new Error("Sessions manquant (sessions.js)");
+    if (!window.Engine) throw new Error("Engine manquant (engine.js)");
+    if (!window.UI) throw new Error("UI manquant (ui.js)");
 
-  window.UI.showMenu();
+    // 2) Base UI
+    window.UI.showMenu();
 
-  const params = new URLSearchParams(window.location.search);
+    // 3) URL params
+    const params = new URLSearchParams(window.location.search);
+    const src = params.get("src");
+    if (src) Storage.set("lastSrc", { src, ts: Date.now() });
 
-  const src = params.get("src");
-  if (src) {
-    Storage.set("lastSrc", { src, ts: Date.now() });
-  }
-
-  window.Sessions.applySpentFromURL();
-  window.Sessions.finalizeStaleSessionsToZero();
-
-  window.UI.renderAll();
-
-  // periodic stale check
-  setInterval(() => {
+    // 4) Session apply + stale finalize
+    window.Sessions.applySpentFromURL();
     window.Sessions.finalizeStaleSessionsToZero();
-    window.UI.renderAll();
-  }, 30000);
 
+    // 5) Render
+    window.UI.renderAll();
+
+    // 6) periodic stale check
+    setInterval(() => {
+      window.Sessions.finalizeStaleSessionsToZero();
+      window.UI.renderAll();
+    }, 30000);
+
+  } catch (e) {
+    // Fallback visible même sur iPhone (pas besoin de console)
+    try { Storage.set("_lastError", { ts:new Date().toISOString(), type:"init", message:String(e) }); } catch {}
+    document.body.innerHTML =
+      `<div style="padding:16px;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#fff;background:#0e1117;">
+        <h2 style="margin:0 0 10px;">Intent — erreur de chargement</h2>
+        <p style="opacity:.8;margin:0 0 10px;">Un script a planté ou manque. Détail :</p>
+        <pre style="white-space:pre-wrap;background:rgba(255,255,255,.06);padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.08);">${String(e)}</pre>
+        <p style="opacity:.7;margin-top:10px;">Astuce : vérifie qu’il n’y a pas de 404 sur un fichier .js (noms exacts) et que analytics.js / ui.js / engine.js sont bien commit sur GitHub.</p>
+      </div>`;
+  }
 })();
