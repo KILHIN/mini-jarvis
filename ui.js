@@ -259,6 +259,7 @@ function renderAll(){
   drawChart();
   renderPrediction();
   renderIntentStats();
+  renderRisk();
 }
 
 /* =========================================================
