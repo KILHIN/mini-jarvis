@@ -149,5 +149,50 @@ Analytics.computeRisk = function({
     }
   };
 };
+Analytics.computeProfile = function({ events, now = new Date() }) {
+  const allow = events.filter(e => e.mode === "allow" && Number.isFinite(e.minutes));
+  if (allow.length < 6) {
+    return { traits: [], summary: "Profil: pas assez de données." };
+  }
 
+  const isWeekday = (d) => {
+    const day = d.getDay();
+    return day >= 1 && day <= 5;
+  };
+
+  let night = 0, work = 0, auto = 0, shortB = 0, longB = 0, total = 0;
+
+  for (const e of allow) {
+    const d = new Date(e.ts || Date.now());
+    const h = d.getHours();
+    const m = e.minutes || 0;
+
+    total++;
+
+    if (h >= 22) night++;
+    if (isWeekday(d) && h >= 9 && h <= 18) work++;
+
+    if (e.intent === "auto") auto++;
+    if (m > 0 && m <= 3) shortB++;
+    if (m >= 12) longB++;
+  }
+
+  const pct = (x) => Math.round((x / total) * 100);
+
+  const traits = [];
+
+  // Strict thresholds
+  if (pct(night) >= 30) traits.push({ key:"night", label:`Night scroller (${pct(night)}%)` });
+  if (pct(work) >= 35) traits.push({ key:"work", label:`Work-hours leak (${pct(work)}%)` });
+  if (pct(auto) >= 40) traits.push({ key:"auto", label:`Auto bias (${pct(auto)}%)` });
+  if (pct(shortB) >= 40) traits.push({ key:"short", label:`Short bursts (${pct(shortB)}%)` });
+  if (pct(longB) >= 20) traits.push({ key:"long", label:`Long binges (${pct(longB)}%)` });
+
+  if (traits.length === 0) traits.push({ key:"stable", label:"Profil stable (aucun pattern fort)" });
+
+  return {
+    traits,
+    summary: `Profil (n=${total}) : ` + traits.map(t => t.label).join(" • ")
+  };
+};
 window.Analytics = Analytics;
