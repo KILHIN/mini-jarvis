@@ -6,10 +6,13 @@
 /* =========================================================
    1) DOM HELPERS
    ========================================================= */
-
-function $(id){ return document.getElementById("outcomeBlock")?.classList.remove("hidden");
+function $(id){ return document.getElementById(id); }
 function has(id){ return !!document.getElementById(id); }
 
+function showOutcomeBlock(){
+  const el = document.getElementById("outcomeBlock");
+  if (el) el.classList.remove("hidden");
+}
 /* =========================================================
    2) PANEL CONTROL
    ========================================================= */
