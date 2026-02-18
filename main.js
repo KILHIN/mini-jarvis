@@ -218,6 +218,7 @@ window.launchCoach = () => window.UI.launchCoach();
 window.logChoice = logChoice;
 window.exportData = exportData;
 window.resetLoop = resetLoop;
+window.logOutcome = logOutcome;
 
 /* =========================================================
    8) INIT
