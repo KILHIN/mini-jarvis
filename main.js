@@ -157,7 +157,28 @@ function resetLoop(){
   alert("openPings reset.");
   location.reload();
 }
+function logOutcome(result){
 
+  const lastCoach = window.EventsStore.getEvents()
+    .slice().reverse()
+    .find(e => e.mode === "coach");
+
+  if (!lastCoach) return;
+
+  window.EventsStore.addEvent({
+    ts: Date.now(),
+    date: Engine.todayKey(),
+    type: "outcome",
+    mode: "outcome",
+    app: "system",
+    minutes: 0,
+    actionKey: lastCoach.choice,
+    result
+  });
+
+  alert("Outcome enregistré.");
+  location.reload();
+}
 /* =========================================================
    6) ERROR SHIELD
    ========================================================= */
