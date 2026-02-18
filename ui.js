@@ -248,11 +248,11 @@ function launchCoach(){
 
   if (has("coachSuggestion")){
     $("coachSuggestion").innerText =
-      Engine.coachSuggestion({
-        events,
-        thresholds: { THRESH_ORANGE, THRESH_RED }
-      });
-  }
+    Engine.coachSuggestion({
+  events,
+  thresholds: { THRESH_ORANGE, THRESH_RED },
+  openPings: Storage.get("openPings", [])
+});
 
   showCoach();
 }
