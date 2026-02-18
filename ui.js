@@ -253,7 +253,7 @@ function launchCoach(){
   thresholds: { THRESH_ORANGE, THRESH_RED },
   openPings: Storage.get("openPings", [])
 });
-
+}
   showCoach();
 }
 
