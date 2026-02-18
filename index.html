@@ -114,6 +114,13 @@
         <button onclick="logChoice('alt1')">Je prends alternative 1</button>
         <button onclick="logChoice('alt2')">Je prends alternative 2</button>
       </div>
+      
+      <div id="outcomeBlock" class="hidden">
+  <h3>As-tu vraiment fait l’action ?</h3>
+  <button onclick="logOutcome('done')">Oui</button>
+  <button onclick="logOutcome('partial')">Partiellement</button>
+  <button onclick="logOutcome('ignored')">Non</button>
+</div>
 
       <button onclick="location.reload()">Retour</button>
     </section>
