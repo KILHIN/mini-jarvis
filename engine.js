@@ -138,73 +138,90 @@ Engine.loopStatus = function(openPings) {
 /* =========================================================
    5) COACH GENERATOR
    ========================================================= */
-
 Engine.coachSuggestion = function({
   events,
   thresholds,
+  openPings = [],
   nowDate = new Date()
-}) {
+}){
 
   const { THRESH_ORANGE, THRESH_RED } = thresholds;
 
+  const risk = Analytics.computeRisk({
+    events,
+    thresholds,
+    openPings,
+    now: nowDate
+  });
+
+  const profile = Analytics.computeProfile({ events });
+
   const hour = nowDate.getHours();
-  const day = nowDate.getDay();
-  const isWeekend = (day === 0 || day === 6);
-
-  const totalToday = this.totalToday(events);
-  const trend = this.trendPrediction(events, THRESH_ORANGE, THRESH_RED);
-  const pressure = this.jarvisPressure(events);
-  const intents7 = this.intentStats7d(events);
-
-  const state = this.stateFromThresholds(
-    totalToday,
-    trend.avg,
-    THRESH_ORANGE,
-    THRESH_RED
-  );
+  const isLate = hour >= 22;
 
   const actions = {
-    focus: [
-      { title: "10 min — micro-tâche utile", steps: "Choisis 1 tâche claire. 10 min. Exécution pure." },
-      { title: "8 min — inbox", steps: "5 messages ou 1 mail. Stop net." }
-    ],
-    body: [
-      { title: "10 min — marche", steps: "Sans téléphone. Retour au calme." },
-      { title: "5 min — respiration", steps: "4s inspire / 6s expire." }
-    ],
-    brain: [
-      { title: "10 min — lecture", steps: "5 pages. Zéro multitâche." },
-      { title: "7 min — écriture", steps: "3 lignes : ce que tu veux vraiment faire." }
-    ]
+    deepFocus: "10 min — tâche unique, téléphone hors pièce.",
+    walk: "10 min — marche sans téléphone.",
+    breathing: "5 min — respiration 4/6.",
+    microTask: "8 min — traite 1 tâche précise.",
+    friction: "Écris pourquoi tu ouvres Instagram (1 phrase).",
+    reading: "10 min — lecture concentrée.",
+    hardStop: "Stop net. Écran fermé 15 min."
   };
 
-  let poolPrimary = actions.brain;
-  let poolSecondary = actions.body;
+  let recommendation = actions.reading;
+  let reason = "";
 
-  if (!isWeekend && hour >= 9 && hour <= 18) {
-    poolPrimary = actions.focus;
-    poolSecondary = actions.brain;
-  } else if (hour >= 21) {
-    poolPrimary = actions.body;
+  // 🔥 STRICT MODE LOGIC
+
+  if (risk.score >= 80) {
+    recommendation = actions.hardStop;
+    reason = "Risque critique détecté.";
   }
 
-  const friction =
-    `Total aujourd’hui: ${totalToday} min | Etat: ${state}. ${trend.trendText} | Pression: ${pressure}/3.` +
-    (intents7.total ? ` | Auto (7j): ${intents7.pAuto}%.` : "");
-
-  if (state === "RED") {
-    const pick = poolSecondary[0];
-    return `Analyse: surcharge détectée.\n${friction}\n\nRecommandation:\n• ${pick.title}\n${pick.steps}`;
+  else if (risk.score >= 65) {
+    recommendation = actions.walk;
+    reason = "Risque élevé.";
   }
 
-  if (state === "ORANGE") {
-    const pick = (pressure >= 2) ? actions.body[0] : poolPrimary[0];
-    return `Analyse: dérive modérée.\n${friction}\n\nRecommandation:\n• ${pick.title}\n${pick.steps}`;
+  else if (profile.traits.some(t => t.key === "night")) {
+    recommendation = actions.breathing;
+    reason = "Usage tardif détecté.";
   }
 
-  const pick = (pressure >= 2) ? actions.focus[0] : poolPrimary[1];
-  return `Analyse: contrôle acceptable.\n${friction}\n\nOptimisation:\n• ${pick.title}\n${pick.steps}`;
+  else if (profile.traits.some(t => t.key === "work")) {
+    recommendation = actions.microTask;
+    reason = "Fuite en heures productives.";
+  }
+
+  else if (profile.traits.some(t => t.key === "auto")) {
+    recommendation = actions.friction;
+    reason = "Biais automatique détecté.";
+  }
+
+  else if (profile.traits.some(t => t.key === "long")) {
+    recommendation = actions.walk;
+    reason = "Sessions longues répétées.";
+  }
+
+  else if (profile.traits.some(t => t.key === "short")) {
+    recommendation = actions.deepFocus;
+    reason = "Micro-bursts fréquents.";
+  }
+
+  else {
+    recommendation = actions.reading;
+    reason = "Optimisation légère.";
+  }
+
+  const explanation =
+    `Risk ${risk.score}/100 (${risk.tier}).\n` +
+    `Profil: ${profile.traits.map(t=>t.key).join(", ")}.\n` +
+    `Signal dominant: ${reason}`;
+
+  return `${explanation}\n\nRecommandation:\n• ${recommendation}`;
 };
+
 
 
 /* =========================================================
