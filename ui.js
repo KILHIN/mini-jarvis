@@ -231,6 +231,14 @@ function renderRisk(){
     $("riskReasons").style.whiteSpace = "pre-line";
   }
 }
+function renderProfileTraits(){
+  if (!has("profileTraits") || !window.Analytics) return;
+
+  const events = window.EventsStore.getEvents();
+  const p = Analytics.computeProfile({ events });
+
+  $("profileTraits").innerText = p.summary;
+}
 /* =========================================================
    7) COACH
    ========================================================= */
@@ -260,6 +268,7 @@ function renderAll(){
   renderPrediction();
   renderIntentStats();
   renderRisk();
+  renderProfileTraits();
 }
 
 /* =========================================================
