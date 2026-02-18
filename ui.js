@@ -7,7 +7,7 @@
    1) DOM HELPERS
    ========================================================= */
 
-function $(id){ return document.getElementById(id); }
+function $(id){ return document.getElementById("outcomeBlock")?.classList.remove("hidden");
 function has(id){ return !!document.getElementById(id); }
 
 /* =========================================================
