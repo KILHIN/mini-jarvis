@@ -4,6 +4,7 @@
    ========================================================= */
 
 const Engine = {};
+const performance = Analytics.actionPerformance(events);
 
 /* =========================================================
    1) TIME HELPERS
@@ -222,7 +223,16 @@ Engine.coachSuggestion = function({
   return `${explanation}\n\nRecommandation:\n• ${recommendation}`;
 };
 
+// Pondération simple
+const actionScores = {
+  primary: performance.primary,
+  alt1: performance.alt1,
+  alt2: performance.alt2
+};
 
+// choisir la meilleure action historiquement efficace
+const bestAction = Object.entries(actionScores)
+  .sort((a,b)=> b[1] - a[1])[0][0];
 
 /* =========================================================
    EXPORT
