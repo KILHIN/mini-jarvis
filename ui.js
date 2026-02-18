@@ -209,7 +209,28 @@ function renderIntentStats(){
     ? `Intentions (7j) : Reply ${s.pReply}% | Fun ${s.pFun}% | Auto ${s.pAuto}% (n=${s.total}).`
     : "Intentions (7j) : aucune donnée.";
 }
+function renderRisk(){
+  if (!has("riskLine") || !window.Analytics) return;
 
+  const events = window.EventsStore.getEvents();
+  const openPings = Storage.get("openPings", []);
+
+  const r = Analytics.computeRisk({
+    events,
+    thresholds: { THRESH_ORANGE, THRESH_RED },
+    openPings
+  });
+
+  $("riskLine").innerText = `Risk-score : ${r.score}/100 — ${r.tier}.`;
+
+  if (has("riskReasons")){
+    const txt = r.topReasons.length
+      ? r.topReasons.map(x => `• ${x.detail}`).join("\n")
+      : "• Aucun signal fort.";
+    $("riskReasons").innerText = txt;
+    $("riskReasons").style.whiteSpace = "pre-line";
+  }
+}
 /* =========================================================
    7) COACH
    ========================================================= */
