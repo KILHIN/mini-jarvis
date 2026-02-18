@@ -196,3 +196,33 @@ Analytics.computeProfile = function({ events, now = new Date() }) {
   };
 };
 window.Analytics = Analytics;
+Analytics.actionPerformance = function(events){
+
+  const outcomes = events.filter(e => e.mode === "outcome");
+
+  const stats = {
+    primary: { done:0, partial:0, ignored:0 },
+    alt1: { done:0, partial:0, ignored:0 },
+    alt2: { done:0, partial:0, ignored:0 }
+  };
+
+  for (const o of outcomes){
+    if (!stats[o.actionKey]) continue;
+    if (!stats[o.actionKey][o.result] && o.result !== 0) continue;
+    stats[o.actionKey][o.result]++;
+  }
+
+  function score(s){
+    const total = s.done + s.partial + s.ignored;
+    if (total === 0) return 0;
+    return (
+      (s.done * 2 + s.partial * 1 - s.ignored * 2) / total
+    );
+  }
+
+  return {
+    primary: score(stats.primary),
+    alt1: score(stats.alt1),
+    alt2: score(stats.alt2)
+  };
+};
