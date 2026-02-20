@@ -213,11 +213,15 @@ function renderIntentStats(){
     : "Intentions (7j) : aucune donnée.";
 }
 
-function renderRisk({ events, thresholds, openPings }) {
-  // Safe guards (ne jamais planter l'UI)
-  if (!window.Analytics || !window.Engine) return;
+function renderRisk() {
+  // Safe guards
+  if (!window.Analytics || !window.Engine || !window.EventsStore) return;
 
+  const events = window.EventsStore.getEvents();
+  const openPings = window.Storage ? Storage.get("openPings", []) : [];
+  const thresholds = { THRESH_ORANGE, THRESH_RED };
   const now = new Date();
+
   const risk = Analytics.computeRisk({
     events,
     thresholds,
@@ -238,25 +242,23 @@ function renderRisk({ events, thresholds, openPings }) {
     fill.style.width = pct + "%";
 
     // Couleur soft selon tier (Apple-like)
-    if (risk.tier === "élevé") fill.style.background = "rgba(255,59,48,0.85)";      // rouge iOS
-    else if (risk.tier === "modéré") fill.style.background = "rgba(255,159,10,0.85)"; // orange iOS
-    else fill.style.background = "rgba(52,199,89,0.85)";                               // vert iOS
+    if (risk.tier === "élevé") fill.style.background = "rgba(255,59,48,0.85)";
+    else if (risk.tier === "modéré") fill.style.background = "rgba(255,159,10,0.85)";
+    else fill.style.background = "rgba(52,199,89,0.85)";
   }
 
-  // 3) Chips = top 3 raisons (visuel, court)
+  // 3) Chips = top 3 raisons
   const chips = document.getElementById("riskChips");
   if (chips) {
     const top = Array.isArray(risk.topReasons) ? risk.topReasons.slice(0, 3) : [];
-
-    chips.innerHTML = top
-      .map(r => `<span class="pill">${escapeHtml(r.label)}</span>`)
-      .join("");
-
-    // Si aucune raison (pas assez de data), on met une chip neutre
-    if (!top.length) {
-      chips.innerHTML = `<span class="pill">Données insuffisantes</span>`;
-    }
+    chips.innerHTML = top.map(r => `<span class="pill">${escapeHtml(r.label)}</span>`).join("");
+    if (!top.length) chips.innerHTML = `<span class="pill">Données insuffisantes</span>`;
   }
+
+  // 4) Cache l'ancien bloc texte s'il existe encore
+  const old = document.getElementById("riskReasons");
+  if (old) old.classList.add("hidden");
+}
 
   // 4) (Optionnel) on cache l'ancien bloc texte s'il existe encore dans le DOM
   const old = document.getElementById("riskReasons");
