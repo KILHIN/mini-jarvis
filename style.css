@@ -464,7 +464,7 @@ button:active{
 #tools .accordion__content{
   display: flex;
   flex-direction: column;
-  gap: 12px;              /* espace propre entre boutons */
+  gap: 20px;              /* espace propre entre boutons */
 }
 
 #tools .accordion__content button{
