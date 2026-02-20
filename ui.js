@@ -212,28 +212,67 @@ function renderIntentStats(){
     ? `Intentions (7j) : Reply ${s.pReply}% | Fun ${s.pFun}% | Auto ${s.pAuto}% (n=${s.total}).`
     : "Intentions (7j) : aucune donnée.";
 }
-function renderRisk(){
-  if (!has("riskLine") || !window.Analytics) return;
 
-  const events = window.EventsStore.getEvents();
-  const openPings = Storage.get("openPings", []);
+function renderRisk({ events, thresholds, openPings }) {
+  // Safe guards (ne jamais planter l'UI)
+  if (!window.Analytics || !window.Engine) return;
 
-  const r = Analytics.computeRisk({
+  const now = new Date();
+  const risk = Analytics.computeRisk({
     events,
-    thresholds: { THRESH_ORANGE, THRESH_RED },
-    openPings
+    thresholds,
+    openPings,
+    now
   });
 
-  $("riskLine").innerText = `Risk-score : ${r.score}/100 — ${r.tier}.`;
-
-  if (has("riskReasons")){
-    const txt = r.topReasons.length
-      ? r.topReasons.map(x => `• ${x.detail}`).join("\n")
-      : "• Aucun signal fort.";
-    $("riskReasons").innerText = txt;
-    $("riskReasons").style.whiteSpace = "pre-line";
+  // 1) Ligne principale
+  const riskLine = document.getElementById("riskLine");
+  if (riskLine) {
+    riskLine.innerText = `Risk-score : ${risk.score}/100 — ${risk.tier}.`;
   }
+
+  // 2) Barre de risque (0–100)
+  const fill = document.getElementById("riskBarFill");
+  if (fill) {
+    const pct = Math.max(0, Math.min(100, risk.score));
+    fill.style.width = pct + "%";
+
+    // Couleur soft selon tier (Apple-like)
+    if (risk.tier === "élevé") fill.style.background = "rgba(255,59,48,0.85)";      // rouge iOS
+    else if (risk.tier === "modéré") fill.style.background = "rgba(255,159,10,0.85)"; // orange iOS
+    else fill.style.background = "rgba(52,199,89,0.85)";                               // vert iOS
+  }
+
+  // 3) Chips = top 3 raisons (visuel, court)
+  const chips = document.getElementById("riskChips");
+  if (chips) {
+    const top = Array.isArray(risk.topReasons) ? risk.topReasons.slice(0, 3) : [];
+
+    chips.innerHTML = top
+      .map(r => `<span class="pill">${escapeHtml(r.label)}</span>`)
+      .join("");
+
+    // Si aucune raison (pas assez de data), on met une chip neutre
+    if (!top.length) {
+      chips.innerHTML = `<span class="pill">Données insuffisantes</span>`;
+    }
+  }
+
+  // 4) (Optionnel) on cache l'ancien bloc texte s'il existe encore dans le DOM
+  const old = document.getElementById("riskReasons");
+  if (old) old.classList.add("hidden");
 }
+
+/* Petit helper pour éviter l’injection HTML via labels (sécurité) */
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 function renderProfileTraits(){
   if (!has("profileTraits") || !window.Analytics) return;
 
