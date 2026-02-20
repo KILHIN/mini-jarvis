@@ -423,7 +423,7 @@ button:active{
 }
 
 .accordion__content button + button{
-  margin-top: 10px;
+  margin-top: 14px;
 }
 
 /* =========================================================
@@ -449,7 +449,7 @@ button:active{
 /* L’input fichier plus compact */
 #tools input[type="file"]{
   width: 100%;
-  margin-top: 10px;
+  margin-top: 14px;
   padding: 12px;
   border-radius: 14px;
   border: 1px solid rgba(255,255,255,0.10);
