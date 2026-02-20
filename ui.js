@@ -259,19 +259,9 @@ function renderRisk(){
     else fill.style.background = "rgba(52,199,89,0.85)";
   }
 
-  // chips
-const chips = $("riskChips");
+  const chips = document.getElementById("riskChips");
 if (chips){
-  const top = Array.isArray(risk.topReasons) ? risk.topReasons.slice(0, 3) : [];
-
-  chips.innerHTML = top.length
-    ? top.map(r => {
-        const label =
-          typeof r === "string" ? r :
-          r?.label ?? r?.reason ?? r?.code ?? "—";
-        return `<span class="pill">${escapeHtml(label)}</span>`;
-      }).join("")
-    : `<span class="pill">Stable</span>`;
+  chips.innerHTML = `<span class="pill">${escapeHtml(JSON.stringify(risk.topReasons))}</span>`;
 }
 
   // hide legacy block if present
