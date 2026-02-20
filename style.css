@@ -456,3 +456,23 @@ button:active{
   background: rgba(255,255,255,0.04);
   color: rgba(255,255,255,0.85);
 }
+
+/* =========================================================
+   Outils — empêcher chevauchement des boutons
+   ========================================================= */
+
+#tools .accordion__content{
+  display: flex;
+  flex-direction: column;
+  gap: 12px;              /* espace propre entre boutons */
+}
+
+#tools .accordion__content button{
+  margin: 0 !important;   /* neutralise les règles globales */
+  width: 100%;
+}
+
+/* Si tu as encore une règle "button + button { margin-top: ... }" */
+#tools .accordion__content button + button{
+  margin-top: 0 !important;
+}
