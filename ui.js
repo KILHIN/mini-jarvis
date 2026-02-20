@@ -260,13 +260,19 @@ function renderRisk(){
   }
 
   // chips
-  const chips = $("riskChips");
-  if (chips){
-    const top = Array.isArray(risk.topReasons) ? risk.topReasons.slice(0, 3) : [];
-    chips.innerHTML = top.length
-      ? top.map(r => `<span class="pill">${escapeHtml(r.label)}</span>`).join("")
-      : `<span class="pill">Données insuffisantes</span>`;
-  }
+const chips = $("riskChips");
+if (chips){
+  const top = Array.isArray(risk.topReasons) ? risk.topReasons.slice(0, 3) : [];
+
+  chips.innerHTML = top.length
+    ? top.map(r => {
+        const label =
+          typeof r === "string" ? r :
+          r?.label ?? r?.reason ?? r?.code ?? "—";
+        return `<span class="pill">${escapeHtml(label)}</span>`;
+      }).join("")
+    : `<span class="pill">Stable</span>`;
+}
 
   // hide legacy block if present
   if (has("riskReasons")) $("riskReasons").classList.add("hidden");
