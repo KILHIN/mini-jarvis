@@ -425,3 +425,34 @@ button:active{
 .accordion__content button + button{
   margin-top: 10px;
 }
+
+/* =========================================================
+   Anti-doublon (sécurité) + outils plus propres
+   ========================================================= */
+
+/* Si jamais des vieux boutons traînent hors accordéon, on les cache */
+#stats > #btnExport,
+#stats > #btnImport,
+#stats > #btnResetLoop,
+#stats > #importFile{
+  display: none !important;
+}
+
+/* Mais on les autorise à l’intérieur de l’accordéon Outils */
+#tools .accordion__content #btnExport,
+#tools .accordion__content #btnImport,
+#tools .accordion__content #btnResetLoop,
+#tools .accordion__content #importFile{
+  display: block !important;
+}
+
+/* L’input fichier plus compact */
+#tools input[type="file"]{
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.85);
+}
