@@ -111,16 +111,36 @@ function applySpentFromURL() {
     if (!sid || spentRaw === null) return;
 
     const spent = Number.parseInt(spentRaw, 10);
-    if (!Number.isFinite(spent) || spent < 0 || spent > 240) return;
+
+    // Toujours nettoyer l'URL à la fin
+    const cleanURL = () => {
+      params.delete("sid");
+      params.delete("spent");
+      const clean = params.toString();
+      const newUrl = window.location.pathname + (clean ? `?${clean}` : "");
+      window.history.replaceState({}, "", newUrl);
+    };
+
+    // spent invalide → ignore mais nettoie
+    if (!Number.isFinite(spent) || spent < 0 || spent > 240) {
+      cleanURL();
+      return;
+    }
 
     const events = window.EventsStore.getEvents();
     const idx = events.findIndex(e => e.sessionId === sid);
-    if (idx === -1) return;
+    if (idx === -1) {
+      cleanURL();
+      return;
+    }
 
     const event = events[idx];
 
-    // Idempotence: si déjà finalisé / annulé -> ignore
-    if (event.cancelled || event.minutesActual != null || event.finalized) return;
+    // Idempotence stricte
+    if (event.cancelled || event.minutesActual != null || event.finalized) {
+      cleanURL();
+      return;
+    }
 
     events[idx] = {
       ...event,
@@ -135,12 +155,8 @@ function applySpentFromURL() {
     const activeId = getActiveSessionId();
     if (activeId === sid) clearActiveSessionId();
 
-    // Nettoie l’URL
-    params.delete("sid");
-    params.delete("spent");
-    const clean = params.toString();
-    const newUrl = window.location.pathname + (clean ? `?${clean}` : "");
-    window.history.replaceState({}, "", newUrl);
+    cleanURL();
+
   } catch (e) {
     console.warn("applySpentFromURL error:", e);
   }
