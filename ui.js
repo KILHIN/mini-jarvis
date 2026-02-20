@@ -261,7 +261,26 @@ function renderRisk(){
 
   const chips = document.getElementById("riskChips");
 if (chips){
-  chips.innerHTML = `<span class="pill">${escapeHtml(JSON.stringify(risk.topReasons))}</span>`;
+  const top = Array.isArray(risk.topReasons) ? risk.topReasons.slice(0, 3) : [];
+
+  const toLabel = (r) => {
+    if (r == null) return "—";
+    if (typeof r === "string") return r;
+    if (typeof r === "number") return String(r);
+    // objet
+    return String(
+      r.label ??
+      r.reason ??
+      r.code ??
+      r.key ??
+      r.text ??
+      "—"
+    );
+  };
+
+  chips.innerHTML = top.length
+    ? top.map(r => `<span class="pill">${escapeHtml(toLabel(r))}</span>`).join("")
+    : `<span class="pill">Stable</span>`;
 }
 
   // hide legacy block if present
