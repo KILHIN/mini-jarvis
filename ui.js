@@ -1,7 +1,13 @@
 /* =========================================================
-   UI LAYER — DOM Rendering Only
-   No business logic here.
+   UI LAYER — DOM rendering only (V1 stable)
+   Safe guards everywhere (never crash the app)
    ========================================================= */
+
+/* =========================================================
+   0) CONSTANTS (UI only)
+   ========================================================= */
+const THRESH_ORANGE = 30;
+const THRESH_RED = 60;
 
 /* =========================================================
    1) DOM HELPERS
@@ -9,17 +15,37 @@
 function $(id){ return document.getElementById(id); }
 function has(id){ return !!document.getElementById(id); }
 
-function showOutcomeBlock(){
-  const el = document.getElementById("outcomeBlock");
-  if (el) el.classList.remove("hidden");
+function escapeHtml(str){
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
-/* =========================================================
-   2) PANEL CONTROL
-   ========================================================= */
 
+function getEventsSafe(){
+  try{
+    return window.EventsStore?.getEvents?.() ?? [];
+  }catch(e){
+    return [];
+  }
+}
+
+function getOpenPingsSafe(){
+  try{
+    if (window.Storage?.get) return Storage.get("openPings", []);
+    return [];
+  }catch(e){
+    return [];
+  }
+}
+
+/* =========================================================
+   2) PANELS
+   ========================================================= */
 function hideAllPanels(){
-  ["menu","intentBlock","timer","coach"]
-    .forEach(id => has(id) && $(id).classList.add("hidden"));
+  ["menu","intentBlock","timer","coach"].forEach(id => has(id) && $(id).classList.add("hidden"));
 }
 
 function showMenu(){ hideAllPanels(); has("menu") && $("menu").classList.remove("hidden"); }
@@ -30,7 +56,6 @@ function showCoach(){ hideAllPanels(); has("coach") && $("coach").classList.remo
 /* =========================================================
    3) SESSION BANNER
    ========================================================= */
-
 function ensureSessionBanner(){
   const hero = document.querySelector(".hero");
   if (!hero) return null;
@@ -52,12 +77,16 @@ function ensureSessionBanner(){
   `;
   hero.appendChild(el);
 
-  document.getElementById("btnStopSession")
-    ?.addEventListener("click", () => {
-      window.Sessions.stopActiveSession();
+  document.getElementById("btnStopSession")?.addEventListener("click", () => {
+    try{
+      window.Sessions?.stopActiveSession?.();
       renderAll();
       alert("Session stoppée.");
-    });
+    }catch(e){
+      alert("Impossible de stopper la session (erreur).");
+      console.warn(e);
+    }
+  });
 
   return el;
 }
@@ -66,8 +95,8 @@ function renderSessionBanner(){
   const banner = ensureSessionBanner();
   if (!banner) return;
 
-  const events = window.EventsStore.getEvents();
-  const active = window.Sessions.getActiveSession(events);
+  const events = getEventsSafe();
+  const active = window.Sessions?.getActiveSession?.(events) ?? null;
 
   if (!active){
     banner.classList.add("hidden");
@@ -75,26 +104,23 @@ function renderSessionBanner(){
   }
 
   const planned = active.minutesPlanned ?? 10;
-  const start = active.startedAt
+  const start = active.startedAt && window.Sessions?.formatHHMM
     ? window.Sessions.formatHHMM(active.startedAt)
     : "—";
 
-  $("sessionBannerText").textContent =
-    `Début: ${start} • Plan: ${planned} min`;
-
+  if (has("sessionBannerText")){
+    $("sessionBannerText").textContent = `Début: ${start} • Plan: ${planned} min`;
+  }
   banner.classList.remove("hidden");
 }
 
 /* =========================================================
-   4) HERO RENDER
+   4) HERO
    ========================================================= */
-
-const THRESH_ORANGE = 30;
-const THRESH_RED = 60;
-
 function renderHero(){
-  const events = window.EventsStore.getEvents();
+  if (!window.Engine) return;
 
+  const events = getEventsSafe();
   const totalToday = Engine.totalToday(events);
   const trend = Engine.trendPrediction(events, THRESH_ORANGE, THRESH_RED);
   const intents7 = Engine.intentStats7d(events);
@@ -107,20 +133,14 @@ function renderHero(){
     THRESH_RED
   );
 
-  // Minutes
+  // Minutes today
   has("todayMinutes") && ($("todayMinutes").innerText = totalToday);
 
   // State label
-  const stateMap = {
-    GREEN: "VERT",
-    ORANGE: "ORANGE",
-    RED: "ROUGE"
-  };
+  const stateMap = { GREEN: "VERT", ORANGE: "ORANGE", RED: "ROUGE" };
+  has("stateLabel") && ($("stateLabel").innerText = `État: ${stateMap[state] ?? state}`);
 
-  has("stateLabel") &&
-    ($("stateLabel").innerText = `État: ${stateMap[state]}`);
-
-  // State dot class
+  // State dot
   if (has("stateDot")){
     $("stateDot").classList.remove("green","orange","red");
     if (state === "GREEN") $("stateDot").classList.add("green");
@@ -137,20 +157,18 @@ function renderHero(){
   }
 
   has("kpiPressure") && ($("kpiPressure").innerText = `${pressure}/3`);
-  has("kpiAuto") &&
-    ($("kpiAuto").innerText = intents7.total ? `${intents7.pAuto}%` : "—");
+  has("kpiAuto") && ($("kpiAuto").innerText = intents7.total ? `${intents7.pAuto}%` : "—");
 }
 
 /* =========================================================
    5) CHART
    ========================================================= */
-
 function drawChart(){
-  if (!has("chart")) return;
+  if (!has("chart") || !window.Engine) return;
 
   const canvas = $("chart");
   const ctx = canvas.getContext("2d");
-  const events = window.EventsStore.getEvents();
+  const events = getEventsSafe();
   const data = Engine.last7DaysMap(events);
 
   const values = Object.values(data);
@@ -174,7 +192,7 @@ function drawChart(){
     else if (value >= THRESH_ORANGE) ctx.fillStyle = "#ff9f0a";
     else ctx.fillStyle = "#34c759";
 
-    ctx.fillRect(x,y,barWidth,barHeight);
+    ctx.fillRect(x, y, barWidth, barHeight);
 
     ctx.fillStyle = "white";
     ctx.fillText(value + "m", x + 2, y - 5);
@@ -186,13 +204,12 @@ function drawChart(){
 }
 
 /* =========================================================
-   6) TEXT STATS
+   6) TEXT STATS (details accordion)
    ========================================================= */
-
 function renderPrediction(){
-  if (!has("prediction")) return;
+  if (!has("prediction") || !window.Engine) return;
 
-  const events = window.EventsStore.getEvents();
+  const events = getEventsSafe();
   const pred = Engine.trendPrediction(events, THRESH_ORANGE, THRESH_RED);
 
   $("prediction").innerText =
@@ -203,9 +220,9 @@ function renderPrediction(){
 }
 
 function renderIntentStats(){
-  if (!has("intentStats")) return;
+  if (!has("intentStats") || !window.Engine) return;
 
-  const events = window.EventsStore.getEvents();
+  const events = getEventsSafe();
   const s = Engine.intentStats7d(events);
 
   $("intentStats").innerText = s.total
@@ -213,98 +230,83 @@ function renderIntentStats(){
     : "Intentions (7j) : aucune donnée.";
 }
 
-function renderRisk() {
-  // Safe guards
-  if (!window.Analytics || !window.Engine || !window.EventsStore) return;
+/* =========================================================
+   7) RISK — bar + chips (NO PARAMS, NEVER CRASH)
+   ========================================================= */
+function renderRisk(){
+  if (!window.Analytics) return;
 
-  const events = window.EventsStore.getEvents();
-  const openPings = window.Storage ? Storage.get("openPings", []) : [];
+  const events = getEventsSafe();
+  const openPings = getOpenPingsSafe();
   const thresholds = { THRESH_ORANGE, THRESH_RED };
   const now = new Date();
 
-  const risk = Analytics.computeRisk({
-    events,
-    thresholds,
-    openPings,
-    now
-  });
+  const risk = Analytics.computeRisk({ events, thresholds, openPings, now });
 
-  // 1) Ligne principale
-  const riskLine = document.getElementById("riskLine");
-  if (riskLine) {
-    riskLine.innerText = `Risk-score : ${risk.score}/100 — ${risk.tier}.`;
+  // headline
+  if (has("riskLine")){
+    $("riskLine").innerText = `Risk-score : ${risk.score}/100 — ${risk.tier}.`;
   }
 
-  // 2) Barre de risque (0–100)
-  const fill = document.getElementById("riskBarFill");
-  if (fill) {
+  // bar
+  const fill = $("riskBarFill");
+  if (fill){
     const pct = Math.max(0, Math.min(100, risk.score));
     fill.style.width = pct + "%";
 
-    // Couleur soft selon tier (Apple-like)
     if (risk.tier === "élevé") fill.style.background = "rgba(255,59,48,0.85)";
     else if (risk.tier === "modéré") fill.style.background = "rgba(255,159,10,0.85)";
     else fill.style.background = "rgba(52,199,89,0.85)";
   }
 
-  // 3) Chips = top 3 raisons
-  const chips = document.getElementById("riskChips");
-  if (chips) {
+  // chips
+  const chips = $("riskChips");
+  if (chips){
     const top = Array.isArray(risk.topReasons) ? risk.topReasons.slice(0, 3) : [];
-    chips.innerHTML = top.map(r => `<span class="pill">${escapeHtml(r.label)}</span>`).join("");
-    if (!top.length) chips.innerHTML = `<span class="pill">Données insuffisantes</span>`;
+    chips.innerHTML = top.length
+      ? top.map(r => `<span class="pill">${escapeHtml(r.label)}</span>`).join("")
+      : `<span class="pill">Données insuffisantes</span>`;
   }
 
-  // 4) Cache l'ancien bloc texte s'il existe encore
-  const old = document.getElementById("riskReasons");
-  if (old) old.classList.add("hidden");
+  // hide legacy block if present
+  if (has("riskReasons")) $("riskReasons").classList.add("hidden");
 }
 
-  // 4) (Optionnel) on cache l'ancien bloc texte s'il existe encore dans le DOM
-  const old = document.getElementById("riskReasons");
-  if (old) old.classList.add("hidden");
-}
-
-/* Petit helper pour éviter l’injection HTML via labels (sécurité) */
-function escapeHtml(str) {
-  return String(str)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
+/* =========================================================
+   8) PROFILE
+   ========================================================= */
 function renderProfileTraits(){
   if (!has("profileTraits") || !window.Analytics) return;
 
-  const events = window.EventsStore.getEvents();
+  const events = getEventsSafe();
   const p = Analytics.computeProfile({ events });
 
   $("profileTraits").innerText = p.summary;
 }
-/* =========================================================
-   7) COACH
-   ========================================================= */
 
+/* =========================================================
+   9) COACH
+   ========================================================= */
 function launchCoach(){
-  const events = window.EventsStore.getEvents();
+  if (!window.Engine) return;
+
+  const events = getEventsSafe();
+  const openPings = getOpenPingsSafe();
 
   if (has("coachSuggestion")){
-    $("coachSuggestion").innerText =
-    Engine.coachSuggestion({
-  events,
-  thresholds: { THRESH_ORANGE, THRESH_RED },
-  openPings: Storage.get("openPings", [])
-});
-}
+    $("coachSuggestion").innerText = Engine.coachSuggestion({
+      events,
+      thresholds: { THRESH_ORANGE, THRESH_RED },
+      openPings
+    });
+  }
+
   showCoach();
 }
 
 /* =========================================================
-   8) GLOBAL RENDER
+   10) GLOBAL RENDER
    ========================================================= */
-
 function renderAll(){
   renderHero();
   renderSessionBanner();
@@ -318,7 +320,6 @@ function renderAll(){
 /* =========================================================
    EXPORT
    ========================================================= */
-
 window.UI = {
   showMenu,
   showIntent,
