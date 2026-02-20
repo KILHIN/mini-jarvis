@@ -122,9 +122,46 @@
     </section>
 
     <!-- STATS -->
-    <section id="stats" class="card" aria-label="Statistiques">
-      <h2>Analyse des 7 derniers jours</h2>
+   <section id="stats" class="card" aria-label="Statistiques">
+  <h2>Diagnostic</h2>
+
+  <!-- Résumé principal (visible) -->
+  <p id="riskLine"></p>
+
+  <div class="riskbar" aria-label="Risque">
+    <div id="riskBarFill" class="riskbar__fill" style="width:0%"></div>
+  </div>
+
+  <div id="riskChips" class="chips" aria-label="Raisons principales">
+    <!-- Rempli par UI.js : 3 chips max -->
+  </div>
+
+  <p id="profileTraits"></p>
+
+  <!-- DÉTAILS: Analyse 7 jours (repliable) -->
+  <details class="accordion">
+    <summary>Analyse 7 jours</summary>
+    <div class="accordion__content">
       <canvas id="chart" width="350" height="200"></canvas>
+      <p id="prediction"></p>
+      <p id="intentStats"></p>
+      <p id="profile"></p>
+    </div>
+  </details>
+
+  <!-- DÉTAILS: Outils (repliable) -->
+  <details class="accordion">
+    <summary>Outils</summary>
+    <div class="accordion__content">
+      <button onclick="exportData()">Exporter données (JSON)</button>
+
+      <input id="importFile" type="file" accept="application/json" class="hidden" />
+      <button onclick="triggerImport()">Importer données (JSON)</button>
+
+      <button onclick="resetLoop()">Reset boucle (dev)</button>
+    </div>
+  </details>
+</section>
 
       <!-- Data -->
       <button onclick="exportData()">Exporter données (JSON)</button>
