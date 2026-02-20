@@ -259,27 +259,13 @@ function renderRisk(){
     else fill.style.background = "rgba(52,199,89,0.85)";
   }
 
-  const chips = document.getElementById("riskChips");
-if (chips){
+  // chips (3 max)
+const chips = document.getElementById("riskChips");
+if (chips) {
   const top = Array.isArray(risk.topReasons) ? risk.topReasons.slice(0, 3) : [];
 
-  const toLabel = (r) => {
-    if (r == null) return "—";
-    if (typeof r === "string") return r;
-    if (typeof r === "number") return String(r);
-    // objet
-    return String(
-      r.label ??
-      r.reason ??
-      r.code ??
-      r.key ??
-      r.text ??
-      "—"
-    );
-  };
-
   chips.innerHTML = top.length
-    ? top.map(r => `<span class="pill">${escapeHtml(toLabel(r))}</span>`).join("")
+    ? top.map(t => `<span class="pill">${escapeHtml(String(t))}</span>`).join("")
     : `<span class="pill">Stable</span>`;
 }
 
