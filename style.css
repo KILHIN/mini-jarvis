@@ -309,3 +309,48 @@ button:active{
 .hidden{
   display: none !important;
 }
+
+/* ===== Stats text readability ===== */
+#stats p{
+  margin: 10px 0;
+  line-height: 1.45;
+  opacity: 0.92;
+}
+
+#stats{
+  padding-bottom: 24px;
+}
+
+/* Risk block */
+#riskLine{
+  font-weight: 800;
+  font-size: 18px;
+  margin-top: 14px;
+  opacity: 1;
+}
+
+#riskReasons{
+  margin-top: 8px;
+  padding: 12px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  white-space: pre-line;
+}
+
+/* Profile line */
+#profileTraits{
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  opacity: 0.9;
+}
+
+/* Buttons spacing (tools) */
+#stats button{
+  margin-top: 10px;
+}
+
+button{
+  margin-bottom: 10px; /* empêche l’effet “collé” */
+}
