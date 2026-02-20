@@ -354,3 +354,65 @@ button:active{
 button{
   margin-bottom: 10px; /* empêche l’effet “collé” */
 }
+
+/* =========================================
+   STATS — VISUAL HIERARCHY IMPROVEMENT
+   ========================================= */
+
+/* Séparation claire entre sections */
+#stats{
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Risk = bloc principal */
+#riskLine{
+  font-size: 20px;
+  font-weight: 900;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+/* Coloration dynamique possible plus tard */
+#riskLine:contains("modéré"){
+  border-color: rgba(255,159,10,0.5);
+}
+
+/* Raisons mieux encadrées */
+#riskReasons{
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+}
+
+/* Profil séparé visuellement */
+#profileTraits{
+  font-size: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* Intentions plus légères */
+#intentStats{
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+/* Outils plus discrets */
+#stats button{
+  opacity: 0.8;
+  font-size: 14px;
+  padding: 14px;
+}
+
+#stats button:hover{
+  opacity: 1;
+}
