@@ -309,7 +309,7 @@ function renderAll(){
   drawChart();
   renderPrediction();
   renderIntentStats();
-  renderRisk({ events, thresholds, openPings });
+  renderRisk();
   renderProfileTraits();
 }
 
