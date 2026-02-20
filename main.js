@@ -14,40 +14,7 @@ if (typeof ensureSchema === "function") ensureSchema();
 const DEV_MODE = false;
 
 let pendingSessionType = null;
-let timerInterval = null;
 
-/* =========================================================
-   2) TIMER (Pause only)
-   ========================================================= */
-
-function updateTimerDisplay(seconds){
-  const el = document.getElementById("timeDisplay");
-  if (!el) return;
-
-  const m = Math.floor(seconds/60);
-  const s = seconds % 60;
-  el.innerText = `${m}:${s<10?"0":""}${s}`;
-}
-
-function startPause(){
-  window.UI.showTimer();
-
-  let timeLeft = 120;
-  updateTimerDisplay(timeLeft);
-
-  if (timerInterval) clearInterval(timerInterval);
-
-  timerInterval = setInterval(() => {
-    timeLeft--;
-    updateTimerDisplay(timeLeft);
-
-    if (timeLeft <= 0){
-      clearInterval(timerInterval);
-      alert("Pause terminée. Décision consciente requise.");
-      location.reload();
-    }
-  }, 1000);
-}
 
 /* =========================================================
    3) SESSION FLOW (Instagram)
@@ -213,7 +180,6 @@ window.addEventListener("unhandledrejection", (e) => {
 window.startSession = startSession;
 window.cancelIntent = cancelIntent;
 window.setIntentAndStart = setIntentAndStart;
-window.startPause = startPause;
 window.launchCoach = () => window.UI.launchCoach();
 window.logChoice = logChoice;
 window.exportData = exportData;
