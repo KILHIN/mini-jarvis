@@ -312,11 +312,74 @@ button:active{
 
 
 /* =========================================================
-   Apple-like accordions + risk UI (V1 safe)
+   STATS (V1) — Apple-like, minimal, non-redondant
    ========================================================= */
 
+#stats{
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 18px;
+}
+
+#stats h2{
+  margin-bottom: 6px;
+}
+
+/* Risk headline (propre, pas de padding “carte dans carte”) */
+#riskLine{
+  font-size: 18px;
+  font-weight: 900;
+  margin: 2px 0 0;
+}
+
+/* Barre de risque */
+.riskbar{
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  overflow: hidden;
+  margin: 6px 0 8px;
+}
+
+.riskbar__fill{
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: rgba(255,159,10,0.85); /* orange soft */
+}
+
+/* Chips “raisons” */
+.chips{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 0 4px;
+}
+
+.pill{
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.92);
+}
+
+/* Profil dominant */
+#profileTraits{
+  font-size: 13px;
+  opacity: 0.82;
+  margin-top: 6px;
+}
+
+/* Si jamais riskReasons existe encore dans ton HTML : on le cache (anti-redondance) */
+#riskReasons{
+  display: none !important;
+}
+
+/* Accordéons (Analyse 7 jours / Outils) */
 .accordion{
-  margin-top: 14px;
   border-radius: 16px;
   border: 1px solid rgba(255,255,255,0.08);
   background: rgba(255,255,255,0.03);
@@ -352,51 +415,13 @@ button:active{
   border-top: 1px solid rgba(255,255,255,0.06);
 }
 
-.riskbar{
-  height: 10px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.08);
-  overflow: hidden;
-  margin: 10px 0 12px;
-}
-
-.riskbar__fill{
-  height: 100%;
-  width: 0%;
-  border-radius: 999px;
-  background: rgba(255,159,10,0.85); /* orange soft */
-}
-
-.chips{
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 10px 0 6px;
-}
-
-.pill{
-  padding: 7px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  border: 1px solid rgba(255,255,255,0.10);
-  background: rgba(255,255,255,0.04);
-  color: rgba(255,255,255,0.92);
-}
-
-#riskLine{
-  font-size: 18px;
-  font-weight: 900;
-  margin: 4px 0 0;
-}
-
-#profileTraits{
-  margin-top: 10px;
-  font-size: 13px;
-  opacity: 0.82;
-}
-
-/* Outils plus discrets */
+/* Outils : boutons plus compacts (sinon ça prend toute la place) */
 .accordion__content button{
+  padding: 14px;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.accordion__content button + button{
   margin-top: 10px;
-  opacity: 0.88;
 }
